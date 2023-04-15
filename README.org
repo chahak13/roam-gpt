@@ -1,0 +1,41 @@
+#+title: roam-gpt
+Automated link suggestions for personal notes (ala Roam Research/org-roam)
+
+In recent years, Roam Research and its contemporaries have become very common.
+An important part of the process of writing notes in this method is to be able
+to link/backlink notes which are related to each other. When the number of notes
+are less, it is relatively easy to link notes by hand as you would remember what
+notes are similar. On the other hand, once the number of notes starts
+increasing, remembering similar notes off the top of their head to link is a
+difficult task for the user. =roam-gpt= is a python package that gives user
+suggested notes that can be linked together. In the current first version, it is
+a simple Python CLI tool that is built upon [[https://berri.ai][Berri.ai]] APIs to interact with
+OpenAI's GPT language models (Currently GPT-3.5 turbo) to find notes that would
+be related. These suggestions can then be stored to a JSON file which can be
+used by the user to vet and then link the nodes.
+
+
+Being able to find contextually similarity between notes allows the user to find
+potentially unkown links and paths in their knowledge base, and thus improving
+the knowledge graph that they work with.
+
+* Usage
+
+Install =roam-gpt= by cloning the source code and installing the requirements
+via =pip install -r requirements.txt=. Then, you can use =roamgpt/main.py= to
+create suggestions.
+
+#+begin_example
+usage: main.py [-h] --folder FOLDER [-o OUTPUT]
+
+options:
+  -h, --help            show this help message and exit
+  --folder FOLDER       Input folder with text files to suggest links.
+  -o OUTPUT, --output OUTPUT
+                        Output JSON file to store the suggestions.
+#+end_example
+
+* Acknowledgements
+
+Big thanks to Berri.ai for organizing the hackathon and providing easy access to
+GPT models that enabled building this project quickly.
