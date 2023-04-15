@@ -11,7 +11,7 @@ difficult task for the user. =roam-gpt= is a python package that gives user
 suggested notes that can be linked together. In the current first version, it is
 a simple Python CLI tool that is built upon [[https://berri.ai][Berri.ai]] APIs to interact with
 OpenAI's GPT language models (Currently GPT-3.5 turbo) to find notes that would
-be related. These suggestions can then be stored to a JSON file which can be
+be related. These suggestions can then be stored in a JSON file which can be
 used by the user to vet and then link the nodes.
 
 
