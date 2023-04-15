@@ -1,0 +1,9 @@
+:PROPERTIES:
+:ID:       b7df0002-8317-4fc6-bf98-6f6fb8400ecd
+:ROAM_REFS: https://stackoverflow.com/questions/22010586/matplotlib-animation-duration
+:END:
+#+title: python - matplotlib animation duration - Stack Overflow
+#+filetags:  
+Reference URL: https://stackoverflow.com/questions/22010586/matplotlib-animation-duration
+
+A really good explanation on how to determine duration of matplotlib animation.

@@ -1,0 +1,392 @@
+:PROPERTIES:
+:ID:       3bcfc554-62d3-4044-ad9a-d83a79f937ac
+:END:
+#+title: Berri.ai Hackathon
+#+property: header-args :session berry :async yes :exports both :eval no-export
+
+* Try to auto link zettelkasten notes
+** Create chunks of data to use as data source for the berry endpoint
+#+begin_src jupyter-python
+import os
+
+text_files = []
+for root, dir, files in os.walk("/home/chahak/Documents/chahak13.github.io/org/blog/"):
+    for file in files:
+        if file.endswith(".txt"):
+            with open(file, 'r') as f:
+                print(file)
+                text_files.append({"chunk_metadata": file, "chunk": f.read()})
+#+end_src
+
+#+RESULTS:
+#+begin_example
+export_source_code_of_tex_file.txt
+autoreload_with_ipython.txt
+change_font_size_in_emacs.txt
+attractors_using_datashader.txt
+config_class_using_chainmaps.txt
+chunky_pandas_read_csv_in_chunks.txt
+attractors_examples_0_1_0_documentation.txt
+audio_on_linux.txt
+bug_polar_plot_wrong_y_values_when_set_ylim_is_used_issue_24790_matplotlib_matplotlib.txt
+where_are_matplotlib_rcparams_used.txt
+does_plt_scatter_work_with_masked_offsets.txt
+chainmaps_in_python.txt
+emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt
+1_how_scientists_colorize_photos_of_space_youtube.txt
+bug_contour_raises_indexerror_if_z_is_specified_as_keyword_argument_issue_24743_matplotlib_matplotlib.txt
+click_command_line_interfaces:_make_options_required_if_other_optional_option_is_unset.txt
+aaronpenne_generative_art_a_collection_of_my_generative_artwork_mostly_with_processing_in_python_mode.txt
+12_decorator_and_descriptors_advance_python_tutorials_documentation.txt
+#+end_example
+
+** Setting up Berri.ai endpoint
+
+#+begin_src jupyter-python
+import json
+import requests
+
+url = "https://api.berri.ai/create_app"
+data = {"user_email": "cpmdump@gmail.com", "data_source": json.dumps(text_files)}
+instance_response = requests.post(url, data=data)
+playground_endpoint = instance_response.json()["playground_endpoint"]
+print(playground_endpoint)
+#+end_src
+
+#+RESULTS:
+: play.berri.ai/aHR0cHM6Ly9zdG9yZXF1ZXJ5YWJoaTItYXlsdS56ZWV0LWJlcnJpLnplZXQuYXBwL2JlcnJpX3F1ZXJ5P3Byb2pfcGF0aD1pbmRleGVzL2NwbWR1bXBAZ21haWwuY29tL2E3MGZhZmYwLWJmMjAtNDU2NS1hMTgxLTRhMTg5ZTRjNDUwNSZwcm9qX25hbWU9U3RyYXdiZXJyeSBQcm9qZWN0JnF1ZXJ5PQ==
+
+** Playground tries
+
+*** Try getting relevant notes simply.
+#+begin_src jupyter-python
+from pprint import pprint
+
+user_email = instance_response.json()["account_email"]
+instance_id = instance_response.json()["instance_id"]
+model = "gpt-3.5-turbo"
+
+query_api = "https://api.berri.ai/query"
+query = "which chunks are related to python?"
+query_params = {
+    "user_email": user_email,
+    "instance_id": instance_id,
+    "query": query,
+    "model": model,
+    "top_k": 5,
+}
+
+response = requests.get(query_api, params=query_params)
+pprint(response.json())
+#+end_src
+
+*** Use create_template and create_app
+We first create a template for the instance using the ~create_template~ api.
+#+begin_src jupyter-python
+import requests
+import json
+
+template_api = "https://api.berri.ai/create_template"
+
+prompt = """
+Generate the response as a JSON object of related notes. For example,
+
+Question: What notes are related to xyz?
+Response: {
+    "query": The user question,
+    "related_notes": ["note1", "note2", "note3"],
+}
+"""
+app_config = {
+    "advanced": {
+        "intent": "qa_doc",
+        "search": "qa_gen",
+        "app_type": "complex",
+    },
+    # "prompt": prompt,
+}
+
+data = {"app_config": json.dumps(app_config)}
+template_response = requests.post(template_api, data=data)
+print(template_response.json())
+#+end_src
+
+#+RESULTS:
+: {'app_config': {'advanced': {'app_type': 'complex', 'intent': 'qa_doc', 'search': 'qa_gen'}}, 'template_id': 'b037c822-2035-4ce5-9f27-37388e6a0071'}
+
+Now that we have a template, we will use it to create an instance using the ~create_app~ api.
+#+begin_src jupyter-python
+template_id = template_response.json()["template_id"]
+
+app_api = "https://api.berri.ai/create_app"
+data = {"template_id": template_id, "user_email": "cpmdump@gmail.com", "data_source": json.dumps(text_files)}
+app_response = requests.post(app_api, data=data)
+print(app_response.json())
+
+app_endpoint = app_response.json()["api_endpoint"]
+#+end_src
+
+#+RESULTS:
+: {'account_email': 'cpmdump@gmail.com', 'api_endpoint': 'https://api.berri.ai/query?user_email=cpmdump@gmail.com&instance_id=e4e9556e-7337-4bab-a48d-377954985374&agent_type=complex_support', 'instance_id': 'e4e9556e-7337-4bab-a48d-377954985374', 'playground_endpoint': 'play.berri.ai/aHR0cHM6Ly9zdG9yZXF1ZXJ5YWJoaTItYXlsdS56ZWV0LWJlcnJpLnplZXQuYXBwL2JlcnJpX3F1ZXJ5P3Byb2pfcGF0aD1pbmRleGVzL2NwbWR1bXBAZ21haWwuY29tL2U0ZTk1NTZlLTczMzctNGJhYi1hNDhkLTM3Nzk1NDk4NTM3NCZwcm9qX25hbWU9ZGF0YV9saXN0JmFnZW50X3R5cGU9Y29tcGxleF9zdXBwb3J0JnF1ZXJ5PQ==', 'website_endpoint': 'chat.berri.ai/aHR0cHM6Ly9zdG9yZXF1ZXJ5YWJoaTItYXlsdS56ZWV0LWJlcnJpLnplZXQuYXBwL2JlcnJpX3F1ZXJ5P3Byb2pfcGF0aD1pbmRleGVzL2NwbWR1bXBAZ21haWwuY29tL2U0ZTk1NTZlLTczMzctNGJhYi1hNDhkLTM3Nzk1NDk4NTM3NCZwcm9qX25hbWU9ZGF0YV9saXN0JmFnZW50X3R5cGU9Y29tcGxleF9zdXBwb3J0JnF1ZXJ5PQ=='}
+
+This creates an instance that should have the summaries embedded too, which can help relate notes?
+#+begin_src jupyter-python
+from pprint import pprint
+
+user_email = app_response.json()["account_email"]
+instance_id = app_response.json()["instance_id"]
+model = "gpt-3.5-turbo"
+
+query_api = "https://api.berri.ai/query"
+query = "which notes are related to python?"
+query_params = {
+    "user_email": user_email,
+    "instance_id": instance_id,
+    "query": query,
+    "model": model,
+    "top_k": 10,
+}
+
+response = requests.get(query_api, params=query_params)
+
+for reference in response.json()["references"]:
+    print(reference["doc_metadata"], reference["similarity"])
+#+end_src
+
+#+RESULTS:
+: autoreload_with_ipython.txt 0.772821150576018
+: bug_polar_plot_wrong_y_values_when_set_ylim_is_used_issue_24790_matplotlib_matplotlib.txt 0.76837971064003
+: where_are_matplotlib_rcparams_used.txt 0.767879123880019
+
+#+begin_src jupyter-python
+response.json()["response"]
+#+end_src
+
+#+RESULTS:
+: All of the notes in this context are related to Python.
+*** Generate summaries of notes individually
+#+begin_src jupyter-python
+import json
+import requests
+
+summaries = {}
+for note in text_files:
+    print(f"Summarizing {note['chunk_metadata']}")
+    url = "https://api.berri.ai/create_app"
+    data = {"user_email": "cpmdump@gmail.com", "data_source": json.dumps([note])}
+    app_response = requests.post(url, data=data)
+
+    if not app_response.ok:
+        print(app_response.text)
+        break
+    query_api = "https://api.berri.ai/query"
+    query_params = {
+        "user_email": app_response.json()["account_email"],
+        "instance_id": app_response.json()["instance_id"],
+        "query": f"Summarize the note {note['chunk_metadata']}",
+        "model": "gpt-3.5-turbo",
+    }
+    response = requests.get(query_api, params=query_params)
+    summaries[note["chunk_metadata"]] = response.json()["response"]
+
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Summarizing export_source_code_of_tex_file.txt
+Summarizing autoreload_with_ipython.txt
+Summarizing change_font_size_in_emacs.txt
+Summarizing attractors_using_datashader.txt
+Summarizing config_class_using_chainmaps.txt
+Summarizing chunky_pandas_read_csv_in_chunks.txt
+Summarizing attractors_examples_0_1_0_documentation.txt
+Summarizing audio_on_linux.txt
+Summarizing bug_polar_plot_wrong_y_values_when_set_ylim_is_used_issue_24790_matplotlib_matplotlib.txt
+Summarizing where_are_matplotlib_rcparams_used.txt
+Summarizing does_plt_scatter_work_with_masked_offsets.txt
+Summarizing chainmaps_in_python.txt
+Summarizing emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt
+Summarizing 1_how_scientists_colorize_photos_of_space_youtube.txt
+Summarizing bug_contour_raises_indexerror_if_z_is_specified_as_keyword_argument_issue_24743_matplotlib_matplotlib.txt
+Summarizing click_command_line_interfaces:_make_options_required_if_other_optional_option_is_unset.txt
+Summarizing aaronpenne_generative_art_a_collection_of_my_generative_artwork_mostly_with_processing_in_python_mode.txt
+Summarizing 12_decorator_and_descriptors_advance_python_tutorials_documentation.txt
+#+end_example
+
+What if we put these summaries as chunks to get related stuff?
+#+begin_src jupyter-python
+import json
+import requests
+
+data_dump = json.dumps([{"chunk_metadata": name, "chunk": summary} for name, summary in summaries.items()])
+url = "https://api.berri.ai/create_app"
+data = {"user_email": "cpmdump@gmail.com", "data_source": data_dump}
+instance_response = requests.post(url, data=data)
+playground_endpoint = instance_response.json()["playground_endpoint"]
+print(playground_endpoint)
+#+end_src
+
+#+begin_src jupyter-python
+from tqdm import tqdm
+
+related_queries = {}
+for querynote in tqdm(summaries):
+    query_api = "https://api.berri.ai/query"
+    # querynote = "bug_polar_plot_wrong_y_values_when_set_ylim_is_used_issue_24790_matplotlib_matplotlib.txt"
+    # querynote = "bug_contour_raises_indexerror_if_z_is_specified_as_keyword_argument_issue_24743_matplotlib_matplotlib.txt"
+    query_params = {
+        "user_email": instance_response.json()["account_email"],
+        "instance_id": instance_response.json()["instance_id"],
+        "query": f"Which note other than {querynote} talks about similar topics as {querynote}",
+        # "query": f"What topics keywords are covered in {querynote}",
+        "model": "gpt-3.5-turbo",
+    }
+    response = requests.get(query_api, params=query_params)
+    related_queries[querynote] = [(x["doc_metadata"], x["similarity"]) for x in response.json()["references"]]
+#+end_src
+
+#+RESULTS:
+: 100% 18/18 [00:33<00:00,  1.86s/it]
+:
+
+#+begin_src jupyter-python
+pprint(related_queries)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+{'12_decorator_and_descriptors_advance_python_tutorials_documentation.txt': [('12_decorator_and_descriptors_advance_python_tutorials_documentation.txt',
+                                                                              0.801491485346171),
+                                                                             ('bug_contour_raises_indexerror_if_z_is_specified_as_keyword_argument_issue_24743_matplotlib_matplotlib.txt',
+                                                                              0.769774133145604)],
+ '1_how_scientists_colorize_photos_of_space_youtube.txt': [('1_how_scientists_colorize_photos_of_space_youtube.txt',
+                                                            0.866898380621366),
+                                                           ('aaronpenne_generative_art_a_collection_of_my_generative_artwork_mostly_with_processing_in_python_mode.txt',
+                                                            0.787544429009431)],
+ 'aaronpenne_generative_art_a_collection_of_my_generative_artwork_mostly_with_processing_in_python_mode.txt': [('aaronpenne_generative_art_a_collection_of_my_generative_artwork_mostly_with_processing_in_python_mode.txt',
+                                                                                                                0.88111354230034),
+                                                                                                               ('emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt',
+                                                                                                                0.780368471118458)],
+ 'attractors_examples_0_1_0_documentation.txt': [('attractors_examples_0_1_0_documentation.txt',
+                                                  0.849884469214183),
+                                                 ('attractors_using_datashader.txt',
+                                                  0.799727094675026)],
+ 'attractors_using_datashader.txt': [('attractors_using_datashader.txt',
+                                      0.849356923206236),
+                                     ('attractors_examples_0_1_0_documentation.txt',
+                                      0.841316289272838)],
+ 'audio_on_linux.txt': [('audio_on_linux.txt', 0.793566176368703),
+                        ('click_command_line_interfaces:_make_options_required_if_other_optional_option_is_unset.txt',
+                         0.760427890909493)],
+ 'autoreload_with_ipython.txt': [('autoreload_with_ipython.txt',
+                                  0.862660274256445),
+                                 ('chunky_pandas_read_csv_in_chunks.txt',
+                                  0.773916791555096)],
+ 'bug_contour_raises_indexerror_if_z_is_specified_as_keyword_argument_issue_24743_matplotlib_matplotlib.txt': [('bug_contour_raises_indexerror_if_z_is_specified_as_keyword_argument_issue_24743_matplotlib_matplotlib.txt',
+                                                                                                                0.927062315641177),
+                                                                                                               ('bug_polar_plot_wrong_y_values_when_set_ylim_is_used_issue_24790_matplotlib_matplotlib.txt',
+                                                                                                                0.818052487673946)],
+ 'bug_polar_plot_wrong_y_values_when_set_ylim_is_used_issue_24790_matplotlib_matplotlib.txt': [('bug_polar_plot_wrong_y_values_when_set_ylim_is_used_issue_24790_matplotlib_matplotlib.txt',
+                                                                                                0.88649582204242),
+                                                                                               ('bug_contour_raises_indexerror_if_z_is_specified_as_keyword_argument_issue_24743_matplotlib_matplotlib.txt',
+                                                                                                0.850670934887906)],
+ 'chainmaps_in_python.txt': [('chainmaps_in_python.txt', 0.838342616347961),
+                             ('config_class_using_chainmaps.txt',
+                              0.807442005228644)],
+ 'change_font_size_in_emacs.txt': [('change_font_size_in_emacs.txt',
+                                    0.851839845742051),
+                                   ('emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt',
+                                    0.789396265311118)],
+ 'chunky_pandas_read_csv_in_chunks.txt': [('chunky_pandas_read_csv_in_chunks.txt',
+                                           0.845295000355032),
+                                          ('where_are_matplotlib_rcparams_used.txt',
+                                           0.763790937761751)],
+ 'click_command_line_interfaces:_make_options_required_if_other_optional_option_is_unset.txt': [('click_command_line_interfaces:_make_options_required_if_other_optional_option_is_unset.txt',
+                                                                                                 0.923219390051759),
+                                                                                                ('where_are_matplotlib_rcparams_used.txt',
+                                                                                                 0.760569829934478)],
+ 'config_class_using_chainmaps.txt': [('config_class_using_chainmaps.txt',
+                                       0.839832113622164),
+                                      ('chainmaps_in_python.txt',
+                                       0.783611604698386)],
+ 'does_plt_scatter_work_with_masked_offsets.txt': [('does_plt_scatter_work_with_masked_offsets.txt',
+                                                    0.845049315280412),
+                                                   ('where_are_matplotlib_rcparams_used.txt',
+                                                    0.773232239436078)],
+ 'emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt': [('emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt',
+                                                                                                0.839243988602219),
+                                                                                               ('change_font_size_in_emacs.txt',
+                                                                                                0.794385513400397)],
+ 'export_source_code_of_tex_file.txt': [('export_source_code_of_tex_file.txt',
+                                         0.857983976417399),
+                                        ('where_are_matplotlib_rcparams_used.txt',
+                                         0.780384919535461)],
+ 'where_are_matplotlib_rcparams_used.txt': [('where_are_matplotlib_rcparams_used.txt',
+                                             0.852354787774178),
+                                            ('bug_contour_raises_indexerror_if_z_is_specified_as_keyword_argument_issue_24743_matplotlib_matplotlib.txt',
+                                             0.791104194745004)]}
+#+end_example
+
+** Deleting berry instances
+#+begin_src jupyter-python
+import requests
+
+url = "https://api.berri.ai/delete_instance"
+
+instances = [
+    "a235f790-8609-4b75-a662-50fc7dd8bfa0",
+    "a93e9e5c-6aef-4965-877d-ad8ef02d072c",
+    "51d56bb7-00ae-42e5-b452-1d14bfb6310c",
+    "10fc52c4-ed2e-4c4a-9184-57f9e4c21f03",
+    "ac160ec7-7660-472d-bdb3-b35b3742449d",
+    "9f5d7028-3644-4874-8dda-eae2cbdb2bb5",
+    "1a387ee8-aade-4cc5-b556-af6405660329",
+    "cd991ec9-92d5-4054-8afc-fc440e3519cf",
+    "1cae75f4-809e-4073-8cb6-516f7ad27748",
+    "a70faff0-bf20-4565-a181-4a189e4c4505",
+]
+
+for instance_id in instances:
+    params = {
+        "user_email": "cpmdump@gmail.com",
+        "instance_id": instance_id,
+    }
+
+    print(f"Deleting {instance_id}")
+    response = requests.post(url, params=params)
+
+    print(response.text)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Deleting a235f790-8609-4b75-a662-50fc7dd8bfa0
+{"message":"Instance a235f790-8609-4b75-a662-50fc7dd8bfa0 deleted successfully","status":"success"}
+
+Deleting a93e9e5c-6aef-4965-877d-ad8ef02d072c
+{"message":"Instance a93e9e5c-6aef-4965-877d-ad8ef02d072c deleted successfully","status":"success"}
+
+Deleting 51d56bb7-00ae-42e5-b452-1d14bfb6310c
+{"message":"Instance 51d56bb7-00ae-42e5-b452-1d14bfb6310c deleted successfully","status":"success"}
+
+Deleting 10fc52c4-ed2e-4c4a-9184-57f9e4c21f03
+{"message":"Instance 10fc52c4-ed2e-4c4a-9184-57f9e4c21f03 deleted successfully","status":"success"}
+
+Deleting ac160ec7-7660-472d-bdb3-b35b3742449d
+{"message":"Instance ac160ec7-7660-472d-bdb3-b35b3742449d deleted successfully","status":"success"}
+
+Deleting 9f5d7028-3644-4874-8dda-eae2cbdb2bb5
+{"message":"Instance 9f5d7028-3644-4874-8dda-eae2cbdb2bb5 deleted successfully","status":"success"}
+
+Deleting 1a387ee8-aade-4cc5-b556-af6405660329
+{"message":"Instance 1a387ee8-aade-4cc5-b556-af6405660329 deleted successfully","status":"success"}
+
+Deleting cd991ec9-92d5-4054-8afc-fc440e3519cf
+{"message":"Instance cd991ec9-92d5-4054-8afc-fc440e3519cf deleted successfully","status":"success"}
+
+Deleting 1cae75f4-809e-4073-8cb6-516f7ad27748
+{"message":"Instance 1cae75f4-809e-4073-8cb6-516f7ad27748 deleted successfully","status":"success"}
+
+Deleting a70faff0-bf20-4565-a181-4a189e4c4505
+{"message":"Instance a70faff0-bf20-4565-a181-4a189e4c4505 deleted successfully","status":"success"}
+#+end_example

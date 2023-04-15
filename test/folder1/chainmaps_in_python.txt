@@ -1,0 +1,174 @@
+                         ━━━━━━━━━━━━━━━━━━━━━
+                          CHAINMAPS IN PYTHON
+
+                              Chahak Mehta
+                         ━━━━━━━━━━━━━━━━━━━━━
+
+
+Table of Contents
+─────────────────
+
+
+
+
+`ChainMap' is a class that provides an interface to quickly link
+multiple mappings so that they can be treated as a single unit. For ex.,
+it can act as a container such that there are two dictionaries, one
+default and the other that contains user defined values. This allows
+easy access to new/old and user updated values. This note is a simple
+exploration of the `collections.ChainMap' interface.
+
+┌────
+│ from collections import ChainMap
+│ 
+│ defaults = {"color": "red", "user": "guest", "music": "bach", "art": "davinci"}
+│ uservals = {}
+│ mapping = ChainMap(uservals, defaults)
+│ print(mapping)
+└────
+
+┌────
+│ ChainMap({}, {'color': 'red', 'user': 'guest', 'music': 'bach', 'art': 'davinci'})
+└────
+
+
+┌────
+│ def print_map(mapping):
+│     for k, v in mapping.items():
+│         print(f"{k}: {v}")
+│ 
+│ print_map(mapping)
+└────
+
+┌────
+│ color: red
+│ user: guest
+│ music: bach
+│ art: davinci
+└────
+
+
+When we add a new key-value pair, it gets added into the first mapping.
+┌────
+│ mapping["sport"] = "football"
+│ print(mapping)
+│ print_map(mapping)
+└────
+
+┌────
+│ ChainMap({'sport': 'football'}, {'color': 'red', 'user': 'guest', 'music': 'bach', 'art': 'davinci'})
+│ color: red
+│ user: guest
+│ music: bach
+│ art: davinci
+│ sport: football
+└────
+
+
+On updating an existing value, the first mapping gets a new value and
+hence, when we access the value, it returns the new value.
+┌────
+│ mapping["music"] = "mozart"
+│ print(mapping)
+│ print_map(mapping)
+└────
+
+┌────
+│ ChainMap({'sport': 'football', 'music': 'mozart'}, {'color': 'red', 'user': 'guest', 'music': 'bach', 'art': 'davinci'})
+│ color: red
+│ user: guest
+│ music: mozart
+│ art: davinci
+│ sport: football
+└────
+
+
+It also allows using the dictionary methods like `update()' to perform
+bulk updates.
+┌────
+│ mapping.update({"music": "beethoven", "art": "boticelli"})
+│ print(mapping)
+│ print_map(mapping)
+└────
+
+┌────
+│ ChainMap({'sport': 'football', 'music': 'beethoven', 'art': 'boticelli'}, {'color': 'red', 'user': 'guest', 'music': 'bach', 'art': 'davinci'})
+│ color: red
+│ user: guest
+│ music: beethoven
+│ art: boticelli
+│ sport: football
+└────
+
+
+If we want to delete the updates to the mapping, we can simply use
+`del'.
+┌────
+│ del mapping["music"]
+│ print(mapping)
+│ print_map(mapping)
+└────
+
+┌────
+│ ChainMap({'sport': 'football', 'art': 'boticelli'}, {'color': 'red', 'user': 'guest', 'music': 'bach', 'art': 'davinci'})
+│ color: red
+│ user: guest
+│ music: bach
+│ art: boticelli
+│ sport: football
+└────
+
+
+┌────
+│     def __delitem__(self, key):
+│         try:
+│             del self.maps[0][key]
+│         except KeyError:
+│             raise KeyError(f'Key not found in the first mapping: {key!r}')
+└────
+An important thing to note is that `del' will delete the key only from
+the first mapping, so the defaults remain consistent through writes and
+deletes. For example, the following code will raise an error since after
+the first delete, the `"music"' key is not present in the first mapping.
+┌────
+│ del mapping["music"]
+│ del mapping["music"]
+└────
+
+┌────
+│ ---------------------------------------------------------------------------
+│ KeyError                                  Traceback (most recent call last)
+│ File /usr/lib/python3.10/collections/__init__.py:1042, in ChainMap.__delitem__(self, key)
+│    1041 try:
+│ -> 1042     del self.maps[0][key]
+│    1043 except KeyError:
+│ 
+│ KeyError: 'music'
+│ 
+│ During handling of the above exception, another exception occurred:
+│ 
+│ KeyError                                  Traceback (most recent call last)
+│ Cell In[22], line 1
+│ ----> 1 del mapping["music"]
+│       2 del mapping["music"]
+│ 
+│ File /usr/lib/python3.10/collections/__init__.py:1044, in ChainMap.__delitem__(self, key)
+│    1042     del self.maps[0][key]
+│    1043 except KeyError:
+│ -> 1044     raise KeyError(f'Key not found in the first mapping: {key!r}')
+│ 
+│ KeyError: "Key not found in the first mapping: 'music'"
+└────
+
+We can also update the underlying maps directly. As we see, we can add a
+mapping easily by setting the maps to a new list.
+┌────
+│ print(mapping.maps)
+│ mapping.maps = [{}, *mapping.maps]
+│ print(mapping.maps)
+└────
+
+┌────
+│ [{'sport': 'football'}, {'color': 'red', 'user': 'guest', 'music': 'bach', 'art': 'davinci'}]
+│ [{}, {'sport': 'football'}, {'color': 'red', 'user': 'guest', 'music': 'bach', 'art': 'davinci'}]
+└────

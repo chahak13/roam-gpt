@@ -1,0 +1,8 @@
+:PROPERTIES:
+:ID:       09e39228-044b-4d96-8dd4-eea92b576f47
+:ROAM_REFS: https://github.com/leandromoreira/ffmpeg-libav-tutorial
+:END:
+#+TITLE: leandromoreira/ffmpeg-libav-tutorial: FFmpeg libav tutorial - learn how media works from basic to transmuxing, transcoding and more
+#+filetags: programming
+
+A tutorial on what is =ffmpeg=, =libav= and what's up with audio and video media

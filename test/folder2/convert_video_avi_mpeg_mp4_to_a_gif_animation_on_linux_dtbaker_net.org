@@ -1,0 +1,18 @@
+:PROPERTIES:
+:ID:       645b0d61-cf11-4e48-9483-c790968c22d0
+:ROAM_REFS: https://dtbaker.net/blog/convert-video-avi-mpeg-mp4-to-a-gif-animation-on-linux/
+:END:
+#+TITLE: Convert video AVI/MPEG/MP4 to a Gif animation on Linux | dtbaker.net
+
+Convert the video file to a series of small images:
+
+#+begin_src shell
+mkdir /tmp/gif/
+ffmpeg -i YOURVIDEOFILE.mp4 -r 10 -s 711×400 /tmp/gif/out%04d.gif
+#+end_src
+
+Combine these images together into a GIF animation:
+
+#+begin_src shell
+gifsicle -–delay=10 -–loop --optimize /tmp/gif/*.gif > animation.gif/
+#+end_src

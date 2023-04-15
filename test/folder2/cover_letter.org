@@ -1,0 +1,225 @@
+:PROPERTIES:
+:ID:       a1e28b19-4d56-432d-a88a-eaefe5cb792d
+:END:
+#+title: Cover Letter
+#+date: 2022-02-03 Thu
+#+options: toc:nil
+#+LATEX_HEADER: \usepackage[margin=1in]{geometry}
+#+export_file_name: cover_letter_blackedge.pdf
+
+* Data Science
+** Draft 1
+Dear Hiring Manager,
+#+begin_export latex
+\vspace{2em}
+#+end_export
+
+I have spent the past several years in learning about computer programming and machine learning. What started out as a hobby is something that I've made into a full-time work for myself and I'm excited to bring my expertise as an intern at LightBox.
+
+
+I have experience in developing machine learning pipelines and working with the software engineering team in integrating a machine learning model into the entire product. I worked at Housing.com as a Data Scientist where I helped implement a new price prediction model from scratch, which lead to an increase in the rental sales because of the highly accurate model (~90% accuracy). Working there as a bridge between the Data Science team and the Back-end team also allowed me to understand intrinsicly the various steps that are required to efficiently integrate ML models into an ecosystem. I also have strong communication skills and experience in explaining technical topics to a general audience because of my experience.
+
+
+For the past 1.5 years, I have been working on a project at University of Texas (Austin) where we are developing a new way of simulating epidemics on a large scale. I am collaborating with teams in University of Sonora, Mexico and Mathematics Research Center, Mexico and this has made me comfortable in collaborating with people in different time zones remotely and efficiently in these times of a pandemic. With my background, experience, and drive to learn things that I don't know, I'm sure I can be an asset to the Data Science team at LightBox.
+
+
+I have attached my resume for your reference. Thank you very much for your time and consideration. I hope to hear from you soon.
+#+begin_export latex
+\vspace{2em}
+#+end_export
+
+Thank you,
+
+Chahak
+
+(512)-903-3326
+
+chahak@utexas.edu
+** Oracle
+Hello,
+#+begin_export latex
+\vspace{1.5em}
+#+end_export
+
+I am writing to apply for the *Data Science internship* position at Oracle. I have been deeply interested in understanding the influence of data on driving decisions in our day-to-day life, and I'm using my time at the University of Texas at Austin as an MS student to understand and analyze the techniques used in such projects. Oracle has been at the forefront of the computing industry for a long time and its Data Science department has been no different. My experience and zest make me the ideal candidate for this position and I would love to have an opportunity to contribute to the well-integrated data science solutions at Oracle and show the team that I can be an asset to them. I am confident that with my skills and ability to learn and adapt quickly, I will be the right fit at Oracle.
+
+I have been studying for my degree in *Computational Science, Engineering, and Mathematics* at UT Austin and this has provided me with an opportunity to be at the forefront of the development of various state-of-the-art methods used in Machine Learning. I have been working on a novel method to model epidemics and recently gave a talk on this at the XLII Ibero-Latin-American Congress on Computational Methods in Engineering. This work involves working in collaboration with the University of Sonora and Mathematics Research Center, Mexico. This, along with working as a *Data Scientist* at Housing.com for a year after my undergraduate studies provide me the right balance of industrial projects and research acumen. Using my experience, I can add to the development of the products to streamline various data science pipelines including deployment.
+
+With my background in Computer Science and ML, as well as my desire to consistently learn and improve myself, I know I can contribute to the Data Science team at Oracle, and I'm sure I will maintain and improve the high levels of the projects that I work on. I would welcome the chance to work with the team at Oracle and learn more. I appreciate your time and hope to hear from you soon.
+#+begin_export latex
+\vspace{1em}
+#+end_export
+
+Thanks,
+
+Chahak
+
+Ph: (512)-903-3326
+
+Email: chahak@utexas.edu
+** HAP Capital
+Hello,
+#+begin_export latex
+\vspace{1.5em}
+#+end_export
+
+I am writing to apply for the *Quantitative Research internship* position at HAP Capital. I have been deeply interested in understanding the influence of data on driving decisions in our day-to-day life, and I'm using my time at the University of Texas at Austin as an MS student to understand and analyze the techniques used in such projects. Financial market produces an insane amount of data everyday and HAP Capital has been on the forefront of using this data to perform informed decisions for portfolio management. My experience and zest make me the ideal candidate for this position and I would love to have an opportunity to contribute to the well-integrated solutions at HAP Capital's Electronic Trading Strategies Group and show the team that I can be an asset to them. I am confident that with my skills and ability to learn and adapt quickly, I will be the right fit at HAP Capital.
+
+I have been studying for my degree in *Computational Science, Engineering, and Mathematics* at UT Austin and this has provided me with an opportunity to be at the forefront of the development of various state-of-the-art methods used in Machine Learning. I have been working on a novel method to model epidemics and recently gave a talk on this at the XLII Ibero-Latin-American Congress on Computational Methods in Engineering. This work involves working in collaboration with the University of Sonora and Mathematics Research Center, Mexico. This, along with working as a *Data Scientist* at Housing.com for a year after my undergraduate studies provide me the right balance of industrial projects and research acumen. Using my experience, I can add to the development of the products to streamline various data science pipelines including deployment.
+
+With my background in Computer Science and ML, as well as my desire to consistently learn and improve myself, I know I can contribute to the Electronic Trading Strategies team at HAP Captial, and I'm sure I will maintain and improve the high levels of the projects that I work on. I would welcome the chance to work with the team at HAP Capital and learn more. I appreciate your time and hope to hear from you soon.
+#+begin_export latex
+\vspace{1em}
+#+end_export
+
+Thanks,
+
+Chahak
+
+Ph: (512)-903-3326
+
+Email: chahak@utexas.edu
+** Ordaos Bio
+Hello,
+#+begin_export latex
+\vspace{1.5em}
+#+end_export
+
+I am writing to apply for the *Artificial Intelligence intern* position at Ordaos Bio. I have been deeply interested in understanding the influence of data on driving decisions in our day-to-day life, and I'm using my time at the University of Texas at Austin as an MS student to understand and analyze the techniques used in such projects. Ordaos Bio is working on using these methods in drug discovery and that is one of the most important usecase in my opinion. My experience and zest make me the ideal candidate for this position and I would love to have an opportunity to contribute to the well-integrated solutions at Ordaos Bio and show the team that I can be an asset to them. I am confident that with my skills and ability to learn and adapt quickly, I will be the right fit at Ordaos Bio .
+
+I have been studying for my degree in *Computational Science, Engineering, and Mathematics* at UT Austin and this has provided me with an opportunity to be at the forefront of the development of various state-of-the-art methods used in Machine Learning. I have been working on a novel method to model epidemics and recently gave a talk on this at the XLII Ibero-Latin-American Congress on Computational Methods in Engineering. This work involves working in collaboration with the University of Sonora and Mathematics Research Center, Mexico. This, along with working as a *Data Scientist* at Housing.com for a year after my undergraduate studies provide me the right balance of industrial projects and research acumen. Using my experience, I can add to the development of the products to streamline various data science pipelines including deployment.
+
+With my background in Computer Science and ML, as well as my desire to consistently learn and improve myself, I know I can contribute to the team at Ordaos Bio, and I'm sure I will maintain and improve the high levels of the projects that I work on. I would welcome the chance to work with the team at Ordaos Bio and learn more. I appreciate your time and hope to hear from you soon.
+#+begin_export latex
+\vspace{1em}
+#+end_export
+
+Thanks,
+
+Chahak
+
+Ph: (512)-903-3326
+
+Email: chahak@utexas.edu
+** NDVR
+Hello,
+#+begin_export latex
+\vspace{1.5em}
+#+end_export
+
+I am writing to apply for the *Quantitative Research internship* position at NDVR. I have been deeply interested in understanding the influence of data on driving decisions in our day-to-day life, and I'm using my time at the University of Texas at Austin as an MS student to understand and analyze the techniques used in such projects. Financial market produces an insane amount of data everyday and HAP Capital has been on the forefront of using this data to perform informed decisions for portfolio management. My experience and zest make me the ideal candidate for this position and I would love to have an opportunity to contribute to the well-integrated solutions at NDVR and show the team that I can be an asset to them. I am confident that with my skills and ability to learn and adapt quickly, I will be the right fit at NDVR.
+
+I have been studying for my degree in *Computational Science, Engineering, and Mathematics* at UT Austin and this has provided me with an opportunity to be at the forefront of the development of various state-of-the-art methods used in Machine Learning. I have been working on a novel method to model epidemics and recently gave a talk on this at the XLII Ibero-Latin-American Congress on Computational Methods in Engineering. This work involves working in collaboration with the University of Sonora and Mathematics Research Center, Mexico. This, along with working as a *Data Scientist* at Housing.com for a year after my undergraduate studies provide me the right balance of industrial projects and research acumen. Using my experience, I can add to the development of the products to streamline various data science pipelines including deployment.
+
+With my background in Computer Science and ML, as well as my desire to consistently learn and improve myself, I know I can contribute to the Research team at NDVR, and I'm sure I will maintain and improve the high levels of the projects that I work on. I would welcome the chance to work with the team at NDVR and learn more. I appreciate your time and hope to hear from you soon.
+#+begin_export latex
+\vspace{1em}
+#+end_export
+
+Thanks,
+
+Chahak
+
+Ph: (512)-903-3326
+
+Email: chahak@utexas.edu
+** Vimeo
+Hello,
+#+begin_export latex
+\vspace{1.5em}
+#+end_export
+
+I am writing to apply for the *Artificial Intelligence intern* position at Vimeo. I have been deeply interested in understanding the influence of data on driving decisions in our day-to-day life, and I'm using my time at the University of Texas at Austin as an MS student to understand and analyze the techniques used in such projects. Vimeo is working on using these methods to provide a wonderful platform for creators to share their creations. My experience and zest make me the ideal candidate for this position and I would love to have an opportunity to contribute to the well-integrated solutions at Vimeo and show the team that I can be an asset to them. I am confident that with my skills and ability to learn and adapt quickly, I will be the right fit at Vimeo .
+
+I have been studying for my degree in *Computational Science, Engineering, and Mathematics* at UT Austin and this has provided me with an opportunity to be at the forefront of the development of various state-of-the-art methods used in Machine Learning. I have been working on a novel method to model epidemics and recently gave a talk on this at the XLII Ibero-Latin-American Congress on Computational Methods in Engineering. This work involves working in collaboration with the University of Sonora and Mathematics Research Center, Mexico. This, along with working as a *Data Scientist* at Housing.com for a year after my undergraduate studies provide me the right balance of industrial projects and research acumen. Using my experience, I can add to the development of the products to streamline various data science pipelines including deployment.
+
+With my background in Computer Science and ML, as well as my desire to consistently learn and improve myself, I know I can contribute to the team at Vimeo, and I'm sure I will maintain and improve the high levels of the projects that I work on. I would welcome the chance to work with the team at Vimeo and learn more. I appreciate your time and hope to hear from you soon.
+#+begin_export latex
+\vspace{1em}
+#+end_export
+
+Thanks,
+
+Chahak
+
+Ph: (512)-903-3326
+
+Email: chahak@utexas.edu
+** Mathworks
+Hello,
+#+begin_export latex
+\vspace{1.5em}
+#+end_export
+
+I am writing to apply for the *Engineering Development Group internship* position at Mathworks. I have been deeply interested in understanding the influence of data on driving decisions in our day-to-day life, and MATLAB has been at the forefront of scientific computing since a long time. My experience and zest make me the ideal candidate for this position and I would love to have an opportunity to contribute to the well-integrated engineering products at Mathworks and show the team that I can be an asset to them. I am confident that with my skills and ability to learn and adapt quickly, I will be the right fit at Mathworks.
+
+I have been studying for my degree in *Computational Science, Engineering, and Mathematics* at UT Austin and this has provided me with an opportunity to be at the forefront of the development of various state-of-the-art methods used in Machine Learning. I have been working on a novel method to model epidemics and recently gave a talk on this at the XLII Ibero-Latin-American Congress on Computational Methods in Engineering. This work involves working in collaboration with the University of Sonora and Mathematics Research Center, Mexico. This, along with working as a *Data Scientist* at Housing.com for a year after my undergraduate studies provide me the right balance of industrial projects and research acumen. Using my experience, I can add to the development of the products to streamline various data science pipelines including deployment.
+
+With my background in Computer Science and ML, as well as my desire to consistently learn and improve myself, I know I can contribute to the development team at Mathworks, and I'm sure I will maintain and improve the high levels of the projects that I work on. I would welcome the chance to work with the team at Mathworks and learn more. I appreciate your time and hope to hear from you soon.
+#+begin_export latex
+\vspace{1em}
+#+end_export
+
+Thanks,
+
+Chahak
+
+Ph: (512)-903-3326
+
+Email: chahak@utexas.edu
+** Chime
+Hello,
+#+begin_export latex
+\vspace{1.5em}
+#+end_export
+
+I am writing to apply for the *Data Science internship* position at Chime. I have been deeply interested in understanding the influence of data on driving decisions in our day-to-day life, and I'm using my time at the University of Texas at Austin as an MS student to understand and analyze the techniques used in such projects. With the increasing usage of smartphones and internet, the obvious next step for banking is to go mobile, and Chime has done just that.. My experience and zest make me the ideal candidate for this position and I would love to have an opportunity to contribute to the well-integrated solutions at Chime and show the team that I can be an asset to them. I am confident that with my skills and ability to learn and adapt quickly, I will be the right fit.
+
+I have been studying for my degree in *Computational Science, Engineering, and Mathematics* at UT Austin and this has provided me with an opportunity to be at the forefront of the development of various state-of-the-art methods used in Machine Learning. I have been working on a novel method to model epidemics and recently gave a talk on this at the XLII Ibero-Latin-American Congress on Computational Methods in Engineering. This work involves working in collaboration with the University of Sonora and Mathematics Research Center, Mexico. This, along with working as a *Data Scientist* at Housing.com for a year after my undergraduate studies provide me the right balance of industrial projects and research acumen. Using my experience, I can add to the development of the products to streamline various data science pipelines including deployment.
+
+With my background in Computer Science and ML, as well as my desire to consistently learn and improve myself, I know I can contribute to the Data Science team at Chime, and I'm sure I will maintain and improve the high levels of the projects that I work on. I would welcome the chance to work at Chime and learn more. I appreciate your time and hope to hear from you soon.
+#+begin_export latex
+\vspace{1em}
+#+end_export
+
+Thanks,
+
+Chahak
+** Lark
+Hello,
+#+begin_export latex
+\vspace{1.5em}
+#+end_export
+
+I am writing to apply for the Data Science internship position at Lark. I have been deeply interested in understanding the influence of data on driving decisions in our day-to-day life, and I'm using my time at the University of Texas at Austin as an MS student to understand and analyze the techniques used in such projects. Medical sciences are one such area that can be improved multifold and Lark has been doing just that. My experience and zest make me the ideal candidate for this position and I would love to have an opportunity to contribute to the well-integrated solutions at Lark and show the team that I can be an asset to them. I am confident that with my skills and ability to learn and adapt quickly, I will be the right fit.
+
+I have been studying for my degree in Computational Science, Engineering, and Mathematics at UT Austin and this has provided me with an opportunity to be at the forefront of the development of various state-of-the-art methods used in Machine Learning. I have been working on a novel method to model epidemics and recently gave a talk on this at the XLII Ibero-Latin-American Congress on Computational Methods in Engineering. This work involves working in collaboration with the University of Sonora and Mathematics Research Center, Mexico. This, along with working as a Data Scientist at Housing.com for a year after my undergraduate studies provide me the right balance of industrial projects and research acumen. Using my experience, I can add to the development of the products to streamline various data science pipelines including deployment.
+
+With my background in Computer Science and ML, as well as my desire to consistently learn and improve myself, I know I can contribute to the Data Science team at Lark, and I'm sure I will maintain and improve the high levels of the projects that I work on. I would welcome the chance to work at Lark and learn more. I appreciate your time and hope to hear from you soon.
+#+begin_export latex
+\vspace{1em}
+#+end_export
+
+Thanks,
+
+Chahak
+** BlackEdge
+Hello,
+#+begin_export latex
+\vspace{1.5em}
+#+end_export
+
+I am writing to apply for the *Software Engineering Intern* position at BlackEdge Capital. I have been deeply interested in understanding the influence of data on driving decisions in our day-to-day life, and I'm using my time at the University of Texas at Austin as an MS student to learn that. Financial market produces an insane amount of data everyday and BlackEdge Capital works right in the middle of this, being an options market-matching firm which would require reacting quickly to any external event. Building systems that can streamline this process is a very exciting prospect. My conversations with James Priestley and Tommy Miller have only increased my interest in working at BlackEdge. One thing important for me is to work at a place where there is a smooth flow of ideas between teams and projects, and being a mid-sized company, BlackEdge fits right in the sweet spot too. My experience and zest make me the ideal candidate for this position and I would love to have an opportunity to contribute to the team and be an asset for the company. I am confident that with my skills and ability to learn and adapt quickly, I will be the right fit at BlackEdge.
+
+I have been studying for my degree in *Computational Science, Engineering, and Mathematics* at UT Austin and this has provided me with an opportunity to be at the forefront of the development of various state-of-the-art methods used in Machine Learning. I have been working on a novel method to model epidemics and recently gave a talk on this at the XLII Ibero-Latin-American Congress on Computational Methods in Engineering. This work involves working in collaboration with the University of Sonora and Mathematics Research Center, Mexico. I am also a part of an infant project that aims to build a bridge between unified language for solving Partial Differential Equations (FEniCS, FireDrake etc.) and Machine Learning libraries (PyTorch, JAX etc.). This, along with working as a *Data Scientist* at Housing.com for a year after my undergraduate studies provide me the right balance of industrial development projects and research acumen.
+
+With my background in Computer Science and ML, as well as my desire to consistently learn and improve myself, I know I can contribute to the team at BlackEdge Captial, and I'm sure I will maintain and improve the high levels of the projects that I work on. I would welcome the chance to work with the team at BlackEdge and learn more. I appreciate your time and hope to hear from you soon.
+#+begin_export latex
+\vspace{1em}
+#+end_export
+
+Thanks,
+
+Chahak
+
+Ph: (512)-903-3326

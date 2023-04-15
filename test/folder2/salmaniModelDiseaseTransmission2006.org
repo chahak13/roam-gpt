@@ -1,0 +1,12 @@
+:PROPERTIES:
+:ID:       6a523270-7548-4c2a-b944-d35a6cfe3bad
+:END:
+#+TITLE: Notes on: Salmani, M., van den Driessche, P., ,Department of Mathematics, Statistics, U. o. V., ,Department of Mathematics, & Statistics, U. o. V. (2006): A model for disease transmission in a patchy environment
+#+filetags: paper epidemiology
+
+* SEIRS model
+
+They use a standard SEIRS Model with mobility from different patches added.
+* Well posedness of model
+It is fairly easy to show the well posedness of the model by showing the non-decreasing nature of the ODE of the system. The upper bound is shown by summing all equations for S, E, I and R, and showing that dN/dt \le 0 if N = A/d.
+

@@ -1,0 +1,19 @@
+                      ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                       CHANGE FONT SIZE IN EMACS
+
+                              Chahak Mehta
+                      ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+                               2021-06-25
+
+
+Table of Contents
+─────────────────
+
+
+
+
+Text in emacs can be scaled using ’`C-x C-+'’ or ’`C-x C-'’ to increase
+and ’`C-x C--'’ to decrease. `C-x C-0' can be used to bring it back to
+the default size.

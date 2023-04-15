@@ -1,0 +1,135 @@
+:PROPERTIES:
+:ID:       471d3076-7161-4571-ae45-714e314bc499
+:ROAM_REFS: https://pythonguide.readthedocs.io/en/latest/python/decorator.html
+:END:
+#+title: 12. Decorator and Descriptors — Advance Python Tutorials documentation
+#+property: header-args :session decorator :exports both :eval no-export
+#+filetags:  
+Reference URL: https://pythonguide.readthedocs.io/en/latest/python/decorator.html
+
+* Decorators without arguments
++ The decorator function takes a ~func~ function as an argument. This ~func~ is the function that is to be wrapped.
++ The decorator function defines another function inside it that acts as a ~wrapper~ to the ~func~ function. This ~wrapper~ function returns the return value of ~func~ and the ~decorator~ returns the /function/ ~wrapper~.
+#+begin_src jupyter-python
+def decorator(func):
+    def wrapper(*args, **kwargs):
+        print(func.__name__)
+        return func(*args, **kwargs)
+    return wrapper
+
+@decorator
+def example_func():
+    """Helper docstring"""
+    return 1+2
+
+print(example_func())
+help(example_func)
+#+end_src
+
+#+RESULTS:
+: example_func
+: 3
+: Help on function wrapper in module __main__:
+:
+: wrapper(*args, **kwargs)
+:
+
+As seen above, using ~help()~ on the decorated function (here, ~example_func~) doesn't show the correct docstring help as it just returns the wrapper function. To fix this, we use ~functools.wraps~.
+
+#+begin_src jupyter-python
+import functools
+
+def decorator(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        print(func.__name__)
+        return func(*args, **kwargs)
+    return wrapper
+
+@decorator
+def example_func():
+    """Helper docstring"""
+    return 1+2
+
+print(example_func())
+help(example_func)
+#+end_src
+
+#+RESULTS:
+: example_func
+: 3
+: Help on function example_func in module __main__:
+:
+: example_func()
+:     Helper docstring
+:
+
+This shows the correct docstring for ~example_func~ and not for ~wrapper~.
+* Decorators with arguments
++ To write a decorator that accepts arguments, we need to writer one more outer function that takes as arguments all the required decorator arguments and then write the normal decorator inside that function.
++ These arguments are available inside the functions directly.
+  #+begin_src jupyter-python
+def decorator_with_arg(prefix=""):
+    def decorator(func):
+        msg = prefix + func.__name__
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            print(msg, prefix)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+@decorator_with_arg(prefix="* ")
+def example_for_arg(x, y):
+    """Helper docstring with args."""
+    return x + y
+
+print(example_for_arg(1, 2))
+help(example_for_arg)
+  #+end_src
+
+  #+RESULTS:
+  : * example_for_arg *
+  : 3
+  : Help on function example_for_arg in module __main__:
+  :
+  : example_for_arg(x, y)
+  :     Helper docstring with args.
+  :
++ One issue with this method is that now the function cannot be used as a decorator without passing any arguments.
+* DRY decorators with arguments
++ To overcome the issue exaplained at the end of the previous section, we use ~functools.partial~ to use the same function in both cases.
+
+  #+begin_src jupyter-python
+def decorator_with_optional_arg(func=None, *, suffix=""):
+    if func is None:
+        return functools.partial(decorator_with_optional_arg, suffix=suffix)
+    msg = func.__name__ + suffix
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        print(msg)
+        return func(*args, **kwargs)
+    return wrapper
+
+@decorator_with_optional_arg(suffix="* ")
+def example_for_arg(x, y):
+    """Helper docstring with args."""
+    return x + y
+
+@decorator_with_optional_arg
+def example_opt_arg(x, y):
+    return x-y
+
+print(example_for_arg(1, 2))
+print(example_opt_arg(1, 2))
+  #+end_src
+
+  #+RESULTS:
+  : example_for_arg*
+  : 3
+  : example_opt_arg
+  : -1
+
+When an argument is passed to the decorator, the decorator will not find any function argument at the first position and hence ~return func(*arg, **kwargs)~ will generate an error. To solve this, we use ~partial~ to return a new function that already has the values of the parameters.

@@ -1,0 +1,8 @@
+:PROPERTIES:
+:ID:       37ca72c5-f82f-4b70-9992-596f11b383f3
+:ROAM_REFS: https://www.vice.com/en/article/y3dda7/how-the-personal-computer-broke-the-human-body
+:END:
+#+TITLE: How the Personal Computer Broke the Human Body
+#+filetags: article phsyiology
+
+An article on what were the effects of computer design evolution on human body

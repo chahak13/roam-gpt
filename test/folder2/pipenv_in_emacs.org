@@ -1,0 +1,36 @@
+:PROPERTIES:
+:ID:       4b02b261-cca6-4cae-8fc4-02201dbafebf
+:END:
+#+TITLE: Pipenv in emacs
+#+filetags: emacs python org_mode
+#+property: header-args :eval no-export
+
+  =org-mode= is a really good and powerful interface for literate programming. It also forms a good substitute for Jupyter notebooks when collaboration isn't particularly required on the project. Though, there is one problem that occurs when using python in org-mode - it uses the default system-wide python installation for running the code-blocks. Since using python for various projects requires using virtual environments, it becomes essential to be able to use them inside org-mode. I use [[https://pipenv.pypa.io/en/latest/][pipenv]] for managing my virtual environments. To use that in emacs, I found the [[https://github.com/pwalsh/pipenv.el][pipenv.el]] package that seems to provide all the necessary functionalities to use pipenv in emacs. It can be installed using =straight.el= directly
+
+  #+begin_src emacs-lisp
+    (use-package pipenv
+      :straight t
+      :hook ((python-mode-hook . pipenv-mode)
+             (org-mode-hook . pipenv-mode))
+      )
+  #+end_src
+
+This enables the =pipenv-mode= minor mode while using =python-mode= or =org-mode=. This should provide functions like =pipenv-activate= and =pipenv-deactivate= to activate the required virtual environment and =pipenv-install= to install any package and add it to the =Pipfile=.
+
+When I enabled the =pipenv-mode= minor mode and ran =M-x pipenv-activate= in a directory that contained a =Pipfile=, it showed me an error =Searching for program: No such file or directory, pipenv=. I tried restarting the emacs session but it did not work.
+* Getting pipenv to work
+After running into the issue, I decided going into the source code to see what's going wrong. First important thing that I noticed was that the function =pipenv-activate= checks if the current directory or any of its parent directory is a pipenv project via the =pipenv-project?= function. This is done using the =locate-dominating-file= function and returns the path to the first found directory that contains =Pipfile=.
+
+#+begin_src emacs-lisp
+  (defun pipenv-project? ()
+    "Are we in a Pipenv project?"
+    (locate-dominating-file default-directory "Pipfile"))
+#+end_src
+
+=pipenv-activate= then waits for the =pipenv-venv= function to return the path to the virtual environment for the current project. On trying this function on a file in a pipenv project, I found out that it was this function that was throwing the error. This also made the error more clear as I realised that it is trying to run the =pipenv --venv= command and couldn't find the =pipenv= executable. On further inspection, I found out that the =pipenv= executable was in =~/.local/bin/= which was not in the emacs =exec-path= variable. So, adding this path should potentially resolve this issue.
+
+#+begin_src emacs-lisp
+  (add-to-list 'exec-path "~/.local/bin")
+#+end_src
+
+Yay! =pipenv-activate= works now :)

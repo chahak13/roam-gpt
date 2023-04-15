@@ -1,0 +1,12 @@
+:PROPERTIES:
+:ID:       c1b62590-e09e-43c2-9076-623872c08ca5
+:ROAM_REFS: https://emacsconf.org/2022/talks/school/
+:END:
+#+title: EmacsConf - 2022 - talks - Back to school with Emacs
+#+filetags:  
+Reference URL: https://emacsconf.org/2022/talks/school/
+
++ /Lectorg/ - a small package to improve note-taking experience during lectures.
++ Intersting features that can be borrowed without particularly downloading lectorg:
+  - yasnippet snippets to easily move to a math/latex environment
+  - =org-download= to take screenshots and paste them directly in org file.

@@ -1,0 +1,14 @@
+:PROPERTIES:
+:ID:       fc579659-a315-4df4-879b-b6598440c43a
+:END:
+#+title: Reasons to use EShell - Howard Abrams
+
++ EShell is a shell, not a terminal.
+
+
+1. It's an elisp interpreter
+2. Can mix lisp expressions and shell expressions
+3. Basically use eshell as an emacs buffer that /can/ do shell things and not as a shell buffer
+
+
++

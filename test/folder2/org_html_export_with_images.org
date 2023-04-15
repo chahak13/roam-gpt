@@ -1,0 +1,36 @@
+:PROPERTIES:
+:ID:       efedbe81-5c10-4bae-b1f2-c8c97ec99923
+:END:
+#+title: org html export with images
+#+date: 2021-12-21
+#+filetags: org
+
+When we use =org-html-export-to-html= through the org-export interface, we generate html files for the corresponding org file. I use this feature fairly regularly, along with latex export, to share my research work and assignments. One hiccup I almost always face while sharing the html files is that the html file adds relative links to the image files that are a part of the org file which then requires me to share the images separately. Instead, if I can embed the images directly in the html file, then sharing just a self-contained file makes it much easier for me and my collaborators. To achieve this, I update the =org-html--format-image= function to put in the base64 coded string for the image in the image source link instead of adding a link to the image file.
+
+#+begin_src emacs-lisp :tangle no
+(defun tob64 (filename)
+  (base64-encode-string
+   (with-temp-buffer
+     (insert-file-contents filename)
+     (buffer-string))))
+
+(defun org-html--format-image (source attributes info)
+  (org-html-close-tag
+   "img"
+   (org-html--make-attribute-string
+    (org-combine-plists
+     (list :src (format "data:image/png;base64,%s"
+                        (tob64 source))
+           :alt (if (string-match-p
+                     (concat "^" org-preview-latex-image-directory) source)
+                    (org-html-encode-plain-text
+                     (org-find-text-property-in-string 'org-latex-src source))
+                  (file-name-nondirectory source)))
+     (if (string= "svg" (file-name-extension source))
+         (org-combine-plists '(:class "org-svg") attributes '(:fallback nil))
+       attributes)))
+   info))
+#+end_src
+
+#+RESULTS:
+: org-html--format-image

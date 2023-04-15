@@ -1,0 +1,5 @@
+:PROPERTIES:
+:ID:       bf63e3a3-168a-4f88-b0fc-c851d34b9aa5
+:END:
+#+TITLE: trapezoidal-rule
+#+filetags: maths

@@ -1,0 +1,16 @@
+:PROPERTIES:
+:ID:       74f77554-9603-4532-b252-137d43420a05
+:END:
+#+title: Mbsync
+#+date: 2021-11-11
+
++ =#= marks comments.
++ Strings with spaces should be enclosed in double quotes (="=)
++ Two basic object classes: =Stores= and =Channels=. Two auxiliary objects =Accounts= and =Groups=
+  - =Store=: Defines a collection of mailboxes; basically a folder, either local or remote.
+  - =Channel=: Connects two Stores, describing the way the two are synchronized.
+  - =Accound=: Describes the connection part of network Stores, so server configureations can be shared between multiple Stores.
+  - =Group=: Aggregates multiple Channels to save typing on the command line.
++ File system locations (in particular, =Path= and =Inbox=) use the =Store='s internal path separators, which may be slashes, periods, etc., or even combinations thereof.
++ Mailbox names, OTOH, always use canonical path separators, which are Unix-like forward slashes.
+* Stores

@@ -1,0 +1,114 @@
+:PROPERTIES:
+:ID:       034ec09e-5b1f-4c2c-ab77-35f49d0f3bc9
+:END:
+#+title: Org mode customize latex export
+
+Various options can be used to customize the latex output of org mode exported
+file. Some useful snippets from the documentation are given below.
+
+#+begin_quote
+‘DESCRIPTION’
+     The document’s description.  The description along with author
+     name, keywords, and related file metadata are inserted in the
+     output file by the hyperref package.  See
+     ‘org-latex-hyperref-template’ for customizing metadata items.  See
+     ‘org-latex-title-command’ for typesetting description into the
+     document’s front matter.  Use multiple ‘DESCRIPTION’ keywords for
+     long descriptions.
+#+end_quote
+
+#+begin_quote
+‘LATEX_CLASS’
+     This is LaTeX document class, such as _article_, _report_, _book_,
+     and so on, which contain predefined preamble and headline level
+     mapping that the LaTeX export back-end needs.  The back-end reads
+     the default class name from the ‘org-latex-default-class’ variable.
+     Org has _article_ as the default class.  A valid default class must
+     be an element of ‘org-latex-classes’.
+
+‘LATEX_CLASS_OPTIONS’
+     Options the LaTeX export back-end uses when calling the LaTeX
+     document class.
+#+end_quote
+
+#+begin_quote
+‘LATEX_HEADER’
+‘LATEX_HEADER_EXTRA’
+     Arbitrary lines to add to the document’s preamble, before the
+     hyperref settings.  See ‘org-latex-classes’ for adjusting the
+     structure and order of the LaTeX headers.
+#+end_quote
+
+#+begin_quote
+‘SUBTITLE’
+     The document’s subtitle.  It is typeset as per
+     ‘org-latex-subtitle-format’.  If ‘org-latex-subtitle-separate’ is
+     non-‘nil’, it is typed outside of the ‘\title’ macro.  See
+     ‘org-latex-hyperref-template’ for customizing metadata items.  See
+     ‘org-latex-title-command’ for typesetting description into the
+     document’s front matter.
+#+end_quote
+
+#+begin_quote
+To float an image without specifying a caption, set the
+‘:float’ attribute to one of the following:
+
+‘t’
+     For a standard ‘figure’ environment; used by default whenever an
+     image has a caption.
+
+‘multicolumn’
+     To span the image across multiple columns of a page; the back-end
+     wraps the image in a ‘figure*’ environment.
+
+‘wrap’
+     For text to flow around the image on the right; the figure occupies
+     the left half of the page.
+
+‘sideways’
+     For a new page with the image sideways, rotated ninety degrees, in
+     a ‘sidewaysfigure’ environment; overrides ‘:placement’ setting.
+
+‘nil’
+     To avoid a ‘:float’ even if using a caption.
+#+end_quote
+
+#+begin_quote
+13.10.10 Special blocks in LaTeX export
+---------------------------------------
+
+For other special blocks in the Org file, the LaTeX export back-end
+makes a special environment of the same name.  The back-end also takes
+‘:options’, if any, and appends as-is to that environment’s opening
+string.  For example:
+
+     #+BEGIN_abstract
+       We demonstrate how to solve the Syracuse problem.
+     #+END_abstract
+
+     #+ATTR_LATEX: :options [Proof of important theorem]
+     #+BEGIN_proof
+       ...
+       Therefore, any even number greater than 2 is the sum of two primes.
+     #+END_proof
+
+exports to
+
+     \begin{abstract}
+       We demonstrate how to solve the Syracuse problem.
+     \end{abstract}
+
+     \begin{proof}[Proof of important theorem]
+       ...
+       Therefore, any even number greater than 2 is the sum of two primes.
+     \end{proof}
+
+   If you need to insert a specific caption command, use ‘:caption’
+attribute.  It overrides standard ‘CAPTION’ value, if any.  For example:
+
+     #+ATTR_LATEX: :caption \MyCaption{HeadingA}
+     #+BEGIN_proof
+       ...
+     #+END_proof
+
+#+end_quote

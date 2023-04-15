@@ -1,0 +1,185 @@
+:PROPERTIES:
+:ID: click-command-line-interfaces:-make-options-required-if-other-optional-option-is-unset
+:END:
+#+title: Click Command Line Interfaces: Make options required if other optional option is unset
+
+* [[https://stackoverflow.com/questions/44247099/click-command-line-interfaces-make-options-required-if-other-optional-option-is][Click Command Line Interfaces: Make options required if other optional option is unset]]
+
+When writing a command-line interface (CLI) with the Python [[http://click.pocoo.org/6/][click library]], is it possible to define e.g. three options where the second and third one are only required if the first (optional) one was left unset?
+My use case is a log-in system which allows me to authenticate either via an ~authentication token~ (option 1), or, alternatively, via ~username~ (option 2) and ~password~ (option 3). 
+If the token was given, there is no need to check for ~username~ and ~password~ being defined or prompting them. Otherwise, if the token was omitted then ~username~ and ~password~ become required and must be given.
+Can this be done somehow using callbacks?
+My code to get started which of course does not reflect the intended pattern:
+#+begin_example 
+@click.command()
+@click.option('--authentication-token', prompt=True, required=True)
+@click.option('--username', prompt=True, required=True)
+@click.option('--password', hide_input=True, prompt=True, required=True)
+def login(authentication_token, username, password):
+    print(authentication_token, username, password)
+
+if __name__ == '__main__':
+    login()
+
+#+end_example
+
+Comments
+
+** Answer 1
+
+This can be done by building a custom class derived from ~click.Option~, and in that class over riding the ~click.Option.handle_parse_result()~ method like:
+#+begin_example 
+import click
+
+class NotRequiredIf(click.Option):
+    def __init__(self, *args, **kwargs):
+        self.not_required_if = kwargs.pop('not_required_if')
+        assert self.not_required_if, "'not_required_if' parameter required"
+        kwargs['help'] = (kwargs.get('help', '') +
+            ' NOTE: This argument is mutually exclusive with %s' %
+            self.not_required_if
+        ).strip()
+        super(NotRequiredIf, self).__init__(*args, **kwargs)
+
+    def handle_parse_result(self, ctx, opts, args):
+        we_are_present = self.name in opts
+        other_present = self.not_required_if in opts
+
+        if other_present:
+            if we_are_present:
+                raise click.UsageError(
+                    "Illegal usage: `%s` is mutually exclusive with `%s`" % (
+                        self.name, self.not_required_if))
+            else:
+                self.prompt = None
+
+        return super(NotRequiredIf, self).handle_parse_result(
+            ctx, opts, args)
+
+#+end_example
+To use the custom class, pass the ~cls~ parameter to ~click.option~ decorator like:
+#+begin_example 
+@click.option('--username', prompt=True, cls=NotRequiredIf,
+              not_required_if='authentication_token')
+
+#+end_example
+This works because click is a well designed OO framework. The ~@click.option()~ decorator usually instantiates a ~click.Option~ object but allows this behavior to be overridden with the ~cls~ parameter. So it is a relatively easy matter to inherit from ~click.Option~ in our own class and over ride the desired methods.
+In this case we over ride ~click.Option.handle_parse_result()~ and disable the need to ~user/password~ if ~authentication-token~ token is present, and complain if both ~user/password~ are ~authentication-token~ are present.
+Note: This answer was inspired by [[https://stackoverflow.com/a/37491504/7311767][this answer]]
+#+begin_example 
+@click.command()
+@click.option('--authentication-token')
+@click.option('--username', prompt=True, cls=NotRequiredIf,
+              not_required_if='authentication_token')
+@click.option('--password', prompt=True, hide_input=True, cls=NotRequiredIf,
+              not_required_if='authentication_token')
+def login(authentication_token, username, password):
+    click.echo('t:%s  u:%s  p:%s' % (
+        authentication_token, username, password))
+
+if __name__ == '__main__':
+    login('--username name --password pword'.split())
+    login('--help'.split())
+    login(''.split())
+    login('--username name'.split())
+    login('--authentication-token token'.split())
+
+#+end_example
+from ~login('--username name --password pword'.split())~:
+#+begin_example 
+t:None  u:name  p:pword
+
+#+end_example
+from ~login('--help'.split())~:
+#+begin_example 
+Usage: test.py [OPTIONS]
+
+Options:
+  --authentication-token TEXT
+  --username TEXT              NOTE: This argument is mutually exclusive with
+                               authentication_token
+  --password TEXT              NOTE: This argument is mutually exclusive with
+                               authentication_token
+  --help                       Show this message and exit.
+
+#+end_example
+
+ Comments:
+
+
+** Answer 2
+
+Slightly improved [[https://stackoverflow.com/a/44349292/7311767][Stephen Rauch's answer]] to have multiple mutex parameters.
+#+begin_example 
+import click
+
+class Mutex(click.Option):
+    def __init__(self, *args, **kwargs):
+        self.not_required_if:list = kwargs.pop("not_required_if")
+
+        assert self.not_required_if, "'not_required_if' parameter required"
+        kwargs["help"] = (kwargs.get("help", "") + "Option is mutually exclusive with " + ", ".join(self.not_required_if) + ".").strip()
+        super(Mutex, self).__init__(*args, **kwargs)
+
+    def handle_parse_result(self, ctx, opts, args):
+        current_opt:bool = self.name in opts
+        for mutex_opt in self.not_required_if:
+            if mutex_opt in opts:
+                if current_opt:
+                    raise click.UsageError("Illegal usage: '" + str(self.name) + "' is mutually exclusive with " + str(mutex_opt) + ".")
+                else:
+                    self.prompt = None
+        return super(Mutex, self).handle_parse_result(ctx, opts, args)
+
+#+end_example
+use like this:
+#+begin_example 
+@click.group()
+@click.option("--username", prompt=True, cls=Mutex, not_required_if=["token"])
+@click.option("--password", prompt=True, hide_input=True, cls=Mutex, not_required_if=["token"])
+@click.option("--token", cls=Mutex, not_required_if=["username","password"])
+def login(ctx=None, username:str=None, password:str=None, token:str=None) -> None:
+    print("...do what you like with the params you got...")
+
+#+end_example
+
+ Comments:
+
+
+** Answer 3
+
+Here's another variant, in which has not_required_if must be specified with the snake_case variant, required is used rather than prompt, and importantly, it works if the other arguments are passed through environment variables rather than on the command line by using ctx.command.get_params(...) and param.consume_value(...):
+#+begin_example 
+import click
+
+
+class Mutex(click.Option):
+    def __init__(self, *args, **kwargs):
+        self.not_required_if: list = kwargs.pop("not_required_if")
+
+        assert self.not_required_if, "'not_required_if' parameter required"
+        kwargs["help"] = (kwargs.get("help", "") + "Option is mutually exclusive with " + ", ".join(self.not_required_if) + ".").strip()
+        super(Mutex, self).__init__(*args, **kwargs)
+
+    def handle_parse_result(self, ctx, opts, args):
+        current_opt: bool = self.consume_value(ctx, opts)
+        for other_param in ctx.command.get_params(ctx):
+            if other_param is self:
+                continue
+            if other_param.human_readable_name in self.not_required_if:
+                other_opt: bool = other_param.consume_value(ctx, opts)
+                if other_opt:
+                    if current_opt:
+                        raise click.UsageError(
+                            "Illegal usage: '" + str(self.name)
+                            + "' is mutually exclusive with "
+                            + str(other_param.human_readable_name) + "."
+                        )
+                    else:
+                        self.required = None
+        return super(Mutex, self).handle_parse_result(ctx, opts, args)
+
+#+end_example
+
+ Comments:
+

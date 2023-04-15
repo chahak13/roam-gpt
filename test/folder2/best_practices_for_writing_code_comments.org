@@ -1,0 +1,6 @@
+:PROPERTIES:
+:ID:       3f524c15-d3a6-4730-be23-ef09f6167a95
+:ROAM-KEY: https://stackoverflow.blog/2021/12/23/best-practices-for-writing-code-comments/
+:END:
+#+title: Best practices for writing code comments
+#+date: 2021-12-24

@@ -1,0 +1,58 @@
+:PROPERTIES:
+:ID:       90351f47-3c8a-4fd1-aac2-83e9c1f8dcf9
+:END:
+#+TITLE: Completion in Emacs
+#+DATE: 2021-07-11
+#+property: header-args :tangle ~/.emacs.d/config/cm-32-vertico.el :eval no-export
+#+filetags: emacs
+
+Trying out different completion frameworks for Emacs instead of simply Ivy, just for the heck of it.
+
+#+begin_src emacs-lisp
+(use-package vertico
+  :straight t
+  :init
+  (vertico-mode)
+  :config
+  (setq vertico-cycle t))
+
+(use-package vertico-buffer
+  :after vertico)
+#+end_src
+
+Also use the =orderless= completion style to improve the completion methods for vertico/selectrum etc. This also allows using space as delimeter in vertico, since it reads space as a character to match otherwise.
+
+#+begin_src emacs-lisp
+(use-package orderless
+  :straight t
+  :init
+  (setq completion-styles '(orderless))
+  (setq completion-category-defaults nil)
+  (setq completion-category-overrides '((file (styles partial-completion)))))
+#+end_src
+
+
+To persist history over Emacs restarts, vertico uses the =savehist-mode= that is built into emacs by default.
+
+#+begin_src emacs-lisp
+(use-package savehist
+  :straight nil
+  :init
+  (savehist-mode))
+#+end_src
+
+
+* TODO Embark
+
+* TODO Marginalia
+Marginalia provides extra metadata depending on the context and type of object being actioned upon. This provides an =ivy-rich= type interface for vertico.
+
+#+begin_src emacs-lisp
+(use-package marginalia
+  :straight t
+  :init
+  (marginalia-mode))
+#+end_src
+
+* TODO Consult
+

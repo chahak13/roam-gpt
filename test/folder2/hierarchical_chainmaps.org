@@ -1,0 +1,222 @@
+:PROPERTIES:
+:ID:       48982629-8edf-4cc1-b85f-4e0e824ab12c
+:END:
+#+title: Hierarchical ChainMaps
+#+property: header-args :session hcm :async yes :exports both :eval no-export :tangle yes
+
+After exploring [[id:1e0607c6-e3de-423b-9088-bc20cc9c78cd][ChainMaps in Python]] and [[id:9311e840-e127-4998-a925-c2837a3dfc33][Config class using ChainMaps]],
+I have decided to try and write a Hierarchical ChainMap that can be used as a
+configuration class. This is mainly keeping in mind Matplotlib but might be
+usable in other cases with a few changes too.
+
+#+begin_src jupyter-python
+from collections.abc import Mapping, MutableMapping
+from collections import ChainMap
+
+
+class HierarchicalChainMap:
+    validate = lambda s, x: x
+    namespaces = (
+        "backends",
+        "lines",
+        "patches",
+        "hatches",
+        "boxplot",
+        "font",
+        "text",
+        "latex",
+        "axes",
+        "dates",
+        "ticks",
+        "grids",
+        "legend",
+        "figure",
+        "images",
+        "contour",
+        "errorbar",
+        "histogram",
+        "scatter",
+        "agg",
+        "paths",
+        "savefig",
+        "keymaps",
+        "animation",
+    )
+
+    def __init__(self, *args, **kwargs):
+        self._namespace_maps = {name: ChainMap({}) for name in self.namespaces}
+        self.update(*args, **kwargs)
+        self._namespace_maps = {
+            name: mapping.new_child()
+            for name, mapping in self._namespace_maps.items()
+        }
+        self._mapping = ChainMap(*self._namespace_maps.values())
+
+    def _split_key(self, key, sep="."):
+        keys = key.split(sep, maxsplit=1)
+        return keys, len(keys)
+
+    def _get(self, key):
+        keys, depth = self._split_key(key)
+        if depth == 1:
+            return self._namespace_maps[key]
+        elif depth == 2:
+            return self._namespace_maps[keys[0]].get(keys[1])
+
+    def __getitem__(self, key):
+        self.validate(key)
+        return self._get(key)
+
+    def _set(self, key, value):
+        keys, depth = self._split_key(key)
+        if depth == 1:
+            self._namespace_maps[key] = value
+        elif depth == 2:
+            self._namespace_maps[keys[0]][keys[1]] = value
+
+    def __setitem__(self, key, value):
+        self.validate(key)
+        self._set(key, value)
+
+    def __delitem__(self, key):
+        keys, depth = self._split_key(key)
+        if depth == 1:
+            del self._namespace_maps[key]
+        elif depth == 2:
+            del self._namespace_maps[keys[0]][keys[1]]
+
+    def __iter__(self):
+        """Yield from sorted list of keys"""
+        yield from sorted(self.keys())
+
+    def __len__(self):
+        return sum(len(mapping) for mapping in self._namespace_maps)
+
+    def __repr__(self):
+        return repr(dict(rcParams.items()))
+
+    def keys(self):
+        keys = (
+            ".".join((space, key))
+            for space, mapping in self._namespace_maps.items()
+            for key in mapping.keys()
+        )
+        return keys
+
+    def values(self):
+        for key in self.keys():
+            yield self[key]
+
+    def items(self):
+        for key, value in zip(self.keys(), self.values()):
+            yield key, value
+
+    def pop(self, key):
+        keys, depth = self._split_key(key)
+        if depth == 1:
+            self._mapping.pop()
+        elif depth == 2:
+            self._namespace_mapping[keys[0]].pop(keys[1])
+
+    def popitem(self):
+        return self._mapping.popitem()
+
+    def clear(self):
+        self._mapping.clear()
+
+    def setdefault(self, key, default=None):
+        self._mapping[key] = default
+        return default
+
+    def get(self, key, default=None):
+        return self._mapping[key]
+
+    def update(self, other=(), /, **kwds):
+        """D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.
+        If E present and has a .keys() method, does:     for k in E: D[k] = E[k]
+        If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
+        In either case, this is followed by: for k, v in F.items(): D[k] = v
+        """
+        if isinstance(other, Mapping):
+            for key in other:
+                self[key] = other[key]
+        elif hasattr(other, "keys"):
+            for key in other.keys():
+                self[key] = other[key]
+        else:
+            for key, value in other:
+                self[key] = value
+        for key, value in kwds.items():
+            self[key] = value
+
+
+MutableMapping.register(HierarchicalChainMap)
+#+end_src
+
+#+RESULTS:
+: __main__.HierarchicalChainMap
+
+I can then use this class as a new data structure for ~rcParams~.
+
+#+begin_src jupyter-python
+rcParams = HierarchicalChainMap({"backends.key1": "abc", "lines.key2": "xyz"})
+#+end_src
+
+#+RESULTS:
+
+#+begin_src jupyter-python
+rcParams
+#+end_src
+
+#+RESULTS:
+| backends.key1 | : | abc | lines.key2 | : | xyz |
+
+Next step is to try and implement a context manager.
+
+#+begin_src jupyter-python
+import contextlib
+from copy import deepcopy
+
+@contextlib.contextmanager
+def rc_context(rc=None, fname=None):
+    orig = deepcopy(rcParams)
+    try:
+        for space in rcParams._namespace_maps.keys():
+            rcParams._namespace_maps[space] = rcParams._namespace_maps[
+                space
+            ].new_child()
+        rcParams.update(rc)
+        yield
+    finally:
+        for space in rcParams._namespace_maps.keys():
+            rcParams._namespace_maps[space] = rcParams._namespace_maps[
+                space
+            ].parents
+#+end_src
+
+#+RESULTS:
+
+#+begin_src jupyter-python
+with rc_context(rc={"backends.key1": 123}):
+    print("\nwithin context")
+    print(rcParams)
+
+print("\nafter context")
+print(rcParams)
+#+end_src
+
+#+RESULTS:
+:
+: within context
+: {'backends.key1': 123, 'lines.key2': 'xyz'}
+:
+: after context
+: {'backends.key1': 'abc', 'lines.key2': 'xyz'}
+
+The namespaces can also be accessed directly with their names
+#+begin_src jupyter-python
+rcParams["backends"]
+#+end_src
+
+#+RESULTS:
+: ChainMap({}, {'key1': 'abc'})

@@ -1,0 +1,78 @@
+:PROPERTIES:
+:ID:       7713850b-db00-4a23-b0fe-74ab36b70fcd
+:END:
+#+TITLE: On and Off Campus Employment
+#+DATE: 2021-06-23
+#+filetags: utaustin us masters
+
+
+* During studies
+
+** On-campus Employment
+
++ Any employment paid by uni or through approved vendor.
++ Need to maintain F-1 status
++ No authorization needed
++ Can work upto 20 hrs/week during academic semesters
++ Beyond 20 in breaks
++ Need process done with ISSS for SSN
+
+** CPT
+
++ Beyond 20hours a week on campus / Any paid off campus
++ must be enrolled in US for 2 semesters
++ Job with determined dates
++ Related to your major
++ Should receive course credit or required to complete the degree OR required to complete thesis/report
++ any changes in employer, position or dates, would need new authorization
++ Part-time (<20/wk) is unlimited
++ >12 months of full-time makes inelligible for OPT
++ *unauthorized employment* will lead to termination of f1.
+  - work beyond or prior to authorization
+  - no course credit earned (if through course enrollment)
+
++ Employer needs to provide job offer letter
+
++ advisor should sign off on application and confirm it is related to my major
+
++ CPT for course credit - if during fall/spring, take it in the semester of internship. If during summer, take during either summer semester or succeeding fall semester.
+** OPT
+
++ OPT is employment related to the student's field of study but not integral or required for studies.
++ Must be enrolled for 2 reg sems
++ No job offer required
++ Directly related to major
++ Pre-completion will subtract time from Post-completion OPT.
+  + Part-time subtracts 2:1
+  + Full time subtracts 1:1
++ Can take 3-4 months to approve since done by USCIS
++ Will receive EAD to work
+** After studies
+*** Post Completion OPT
+
++ No job offer required
++ Directly related to major
++ Can apply within 90 days of graduating
+**** Application Process
+1. Check eligibility with ISSS
+2. Can't apply earlier than 90 days of graduating and 60 days after graduating
+3. Apply through myIO/I-20 issued
+4. Send application to USCIS
+5. Add info to SEVP portal
+**** STEM OPT Extension
+24-month extension if
+- Received STEM degree
+- Currently working on initial 12-month of OPT
+- Are working for US company registered with E-Verify employment verification system.
+
+
+* How to get course-credit for CPT
+At the time of applying for CPT, we have to tick a box that says "I'll be using course credit" and the dept will let ISSS know the course that we will be expected to choose.
+
+* Is freelancing legal?
+*NO*. Needs CPT authorization and related to major.
+
+* Can show max 90 days of unemployment after EAD arrives
+
+
+

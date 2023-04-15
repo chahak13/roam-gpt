@@ -1,0 +1,16 @@
+:PROPERTIES:
+:ID:       ed18405e-7a55-4058-9beb-5f8026e3fdf3
+:ROAM_REFS: https://emacsconf.org/2022/talks/journalism/
+:END:
+#+title: EmacsConf - 2022 - talks - Emacs journalism (or everything's a nail if you hit it with Emacs)
+#+filetags:  
+Reference URL: https://emacsconf.org/2022/talks/journalism/
+
+- Short talk by Alfred Zanini, a journalist and documentary filmmaker based in Hong Kong.
+- Talk about workflows
+- What is a workflow?
+  + Any sequnce of actions or tools to achieve a broader task.
+- Good way to start improving workflows is to actually make a conscious effort to figure out /what/ are my regular workflows and write those down.
+- Maybe creating a flowchart will make it easier to understand what all things are required in a workflow.
+- If literate programming using org is a serious thought, then I need to study up and use the /noweb syntax/ properly as it allows me to not have to follow the same structure that my tangled code file would have.
+- Don't do everything all at once. Change one part of your workflow and get comfortable with that change before changing something else.

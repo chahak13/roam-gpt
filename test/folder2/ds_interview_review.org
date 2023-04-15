@@ -1,0 +1,17 @@
+:PROPERTIES:
+:ID:       0ef75a2d-ec1f-42a7-9ab2-5c6cbcce0e18
+:END:
+#+title: DS Interview Review
+#+date: 2022-02-09
+
+* Statistics
+** p-test and student's t-test
+** Chi squared test
+** Confidence Interval
+* Resources
++ [[https://dshahid380.github.io/Data-analysis-with-pandas/]]
++ [[https://github.com/Imperial-College-Data-Science-Society/Cracking-the-Data-Science-Interview]]
++ https://www.analyticsvidhya.com/blog/2017/02/basic-probability-data-science-with-examples/
++ https://static1.squarespace.com/static/54bf3241e4b0f0d81bf7ff36/t/55e9494fe4b011aed10e48e5/1441352015658/probability_cheatsheet.pdf
++ https://github.com/instillai/machine-learning-course#machine-learning
++

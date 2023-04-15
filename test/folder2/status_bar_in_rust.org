@@ -1,0 +1,6 @@
+:PROPERTIES:
+:ID:       605af772-0d4c-4027-94fa-281998c9ee44
+:END:
+#+TITLE: Status bar in Rust
+#+DATE: 2021-07-14
+#+filetags: rust random misc

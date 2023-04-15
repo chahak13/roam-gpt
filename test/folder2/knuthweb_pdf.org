@@ -1,0 +1,10 @@
+:PROPERTIES:
+:ID:       a5112bc8-a63c-49f8-a57c-2d4e00ff8d7e
+:ROAM_REFS: http://www.literateprogramming.com/knuthweb.pdf
+:END:
+#+title: Donald Knuth's paper on Literate programming
+#+filetags:  
+Reference URL: http://www.literateprogramming.com/knuthweb.pdf
+
+* Notes
++

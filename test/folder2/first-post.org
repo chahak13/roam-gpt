@@ -1,0 +1,19 @@
+#+title: First post using org-publish.el
+#+author: Chahak Mehta
+#+date: <2022-11-19 Sat>
+
+This is the first example post being used in testing the setup with =org-publish.el=
+
+#+begin_example python
+print("Example code block")
+#+end_example
+
+#+begin_src python :results output :exports both
+print("Python code block output")
+#+end_src
+
+#+RESULTS:
+: Python code block
+
+#+attr_html: :width 50%
+[[file:../assets/dog.jpg]]

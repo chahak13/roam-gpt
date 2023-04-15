@@ -1,0 +1,7 @@
+:PROPERTIES:
+:ID:       3d1bc701-b0f2-40ed-a446-3455200416ae
+:ROAM_REFS: https://github.com/scipy/scipy/issues/14412
+:END:
+#+TITLE: Extra function arguments to `scipy.integrate.quad_vec` · Issue #14412 · scipy/scipy
+
+This can be a good problem to try and resolve.

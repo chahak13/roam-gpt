@@ -1,0 +1,13 @@
+:PROPERTIES:
+:ID:       21d19493-31d7-4ffe-8a8b-99b9137e2e82
+:END:
+#+title: Show ANSI colors after running code blocks in org mode
+
+If there are any errors on running a code block in org-mode with ansi colors, they get displayed as the color codes. Adding this function as a hook to org-mode resolves that.
+
+#+begin_src emacs-lisp
+(defun display-ansi-colors ()
+  (ansi-color-apply-on-region (point-min) (point-max)))
+
+(add-hook 'org-babel-after-execute-hook #'display-ansi-colors)
+#+end_src

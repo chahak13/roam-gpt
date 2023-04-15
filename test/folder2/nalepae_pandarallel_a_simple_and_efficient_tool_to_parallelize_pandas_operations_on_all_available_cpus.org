@@ -1,0 +1,7 @@
+:PROPERTIES:
+:ID:       ea6abe59-dfaa-4c1f-a1b0-32e8cebdae9c
+:ROAM_REFS: https://github.com/nalepae/pandarallel#api
+:END:
+#+TITLE: nalepae/pandarallel: A simple and efficient tool to parallelize Pandas operations on all available CPUs
+
+

@@ -1,0 +1,48 @@
+:PROPERTIES:
+:ID:       e0dc6185-b2b8-4bd8-a49b-783c49cc1cc7
+:ROAM_REFS: https://www.wondersofphysics.com/2020/04/best-physics-movies.html
+:END:
+#+TITLE: Movies Every Physics Student Should Watch
+#+filetags: movies
+
+A list of movies that should be added to the to-watch list
+
+* Primer
+
+* The Theory of Everything
+
+* Hawking
+
+* Infinity
+
+* Copenhagen
+
+* Interstellar
+
+* Coherence
+
+* Einstein and Eddington
+
+* Predestination
+
+* A Serious Man
+
+* Contact
+
+* 2001: A Space Odyssey
+
+* Gravity
+
+* Flatland: The Movie
+
+* October Sky
+
+* Back To The Future
+
+* The Martian
+
+* Marie Curie: More Than Meets the Eye
+
+* Particle Fever
+
+* Apollo 13

@@ -1,0 +1,19 @@
+:PROPERTIES:
+:ID:       0698dabd-0439-4c13-adf6-2384ead876aa
+:END:
+#+TITLE: Suppress warnings in python
+#+DATE: 2021-07-14
+#+property: header-args :eval no-export
+#+filetags: python
+
+
+While working with packages like numpy and scipy, python can possibly give a lot of warnings. These warnings can be suppressed easily by using the warnings module in the python library.
+
+#+begin_src python :results output, value
+import warnings
+warnings.filterwarnings("ignore")
+#+end_src
+
+And done. This should suppress all the warnings your code produces.
+
+*NOTE OF CAUTION:* Do this /only/ if you know what you're doing and what warnings are being suppressed. Most of the times, having a warning means that something in your code can be improved. Hence, warnings should only be suppressed when there is enough information about the warning and it is an informed decision to suppress it.

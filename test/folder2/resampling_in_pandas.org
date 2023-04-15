@@ -1,0 +1,8 @@
+:PROPERTIES:
+:ID:       c1d7c873-c041-495e-9df3-5c71e500ee6d
+:END:
+#+TITLE: Resampling in Pandas
+#+DATE: 2021-07-12
+#+filetags: python
+
+=pd.DataFrame.resample= can be immensely useful in changing the frequency of a timeseries data.

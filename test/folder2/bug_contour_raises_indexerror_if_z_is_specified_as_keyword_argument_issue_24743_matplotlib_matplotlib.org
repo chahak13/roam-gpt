@@ -1,0 +1,422 @@
+:PROPERTIES:
+:ID:       9fddf6eb-2b20-4212-b7ce-7ce73e6c2cdc
+:ROAM_REFS: https://github.com/matplotlib/matplotlib/issues/24743
+:END:
+#+title: [Bug]: contour raises IndexError if Z is specified as keyword argument · Issue #24743 · matplotlib/matplotlib
+#+property: header-args :session /home/chahak/.local/share/jupyter/runtime/kernel-afe98174-149f-42c7-8f7b-7b78a11d37ec.json :async yes :exports both :eval no-export
+#+filetags:  
+Reference URL: https://github.com/matplotlib/matplotlib/issues/24743
+
+* Bug Summary
+
+~.contour~ raises =IndexError= when =Z= is specified as ~Z=a~.
+
+** Code for Reproduction
+:PROPERTIES:
+:ID:       b247049a-9f50-43d5-b54f-ec0c31f9ffd2
+:END:
+
+[[id:89f6cafa-b868-4e66-b27f-cee4db5f0f73][autoreload with ipython]]
+#+begin_src jupyter-python
+%load_ext autoreload
+%autoreload 3
+#+end_src
+
+#+RESULTS:
+
+#+begin_src jupyter-python
+import numpy as np
+import matplotlib.pyplot as plt
+#+end_src
+
+#+RESULTS:
+
+#+begin_src jupyter-python
+fig, ax = plt.subplots()
+ax.contour(Z=np.random.rand(30, 30))
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+# [goto error]
+#+begin_example
+---------------------------------------------------------------------------
+IndexError                                Traceback (most recent call last)
+Cell In [3], line 5
+      2 import matplotlib.pyplot as plt
+      4 fig, ax = plt.subplots()
+----> 5 ax.contour(Z=np.random.rand(30, 30))
+
+File ~/Documents/matplotlib/lib/matplotlib/__init__.py:1448, in _preprocess_data.<locals>.inner(ax, data, *args, **kwargs)
+   1445 @functools.wraps(func)
+   1446 def inner(ax, *args, data=None, **kwargs):
+   1447     if data is None:
+-> 1448         return func(ax, *map(sanitize_sequence, args), **kwargs)
+   1450     bound = new_sig.bind(ax, *args, **kwargs)
+   1451     auto_label = (bound.arguments.get(label_namer)
+   1452                   or bound.kwargs.get(label_namer))
+
+File ~/Documents/matplotlib/lib/matplotlib/axes/_axes.py:6427, in Axes.contour(self, *args, **kwargs)
+   6418 """
+   6419 Plot contour lines.
+   6420
+   (...)
+   6424 %(contour_doc)s
+   6425 """
+   6426 kwargs['filled'] = False
+-> 6427 contours = mcontour.QuadContourSet(self, *args, **kwargs)
+   6428 self._request_autoscale_view()
+   6429 return contours
+
+File ~/Documents/matplotlib/lib/matplotlib/contour.py:769, in ContourSet.__init__(self, ax, levels, filled, linewidths, linestyles, hatches, alpha, origin, extent, cmap, colors, norm, vmin, vmax, extend, antialiased, nchunk, locator, transform, negative_linestyles, *args, **kwargs)
+    765 if self.negative_linestyles is None:
+    766     self.negative_linestyles = \
+    767         mpl.rcParams['contour.negative_linestyle']
+--> 769 kwargs = self._process_args(*args, **kwargs)
+    770 self._process_levels()
+    772 self._extend_min = self.extend in ['min', 'both']
+
+File ~/Documents/matplotlib/lib/matplotlib/contour.py:1388, in QuadContourSet._process_args(self, corner_mask, algorithm, *args, **kwargs)
+   1384 def _process_args(self, *args, corner_mask=None, algorithm=None, **kwargs):
+   1385     """
+   1386     Process args and kwargs.
+   1387     """
+-> 1388     if isinstance(args[0], QuadContourSet):
+   1389         if self.levels is None:
+   1390             self.levels = args[0].levels
+
+IndexError: tuple index out of range
+#+end_example
+[[file:./.ob-jupyter/7894eb34c94f6e75f93ee0ef2ee7dacb0b661f8d.png]]
+:END:
+
+** Debugging
+*** Requiring atleast 1 positional argument
+The ~ax.contour~ function has the following docstring.
+
+#+begin_src jupyter-python
+help(ax.contour)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Help on method contour in module matplotlib.axes._axes:
+
+contour(*args, data=None, **kwargs) method of matplotlib.axes._subplots.AxesSubplot instance
+    Plot contour lines.
+
+    Call signature::
+
+        contour([X, Y,] Z, [levels], **kwargs)
+
+    `.contour` and `.contourf` draw contour lines and filled contours,
+    respectively.  Except as noted, function signatures and return values
+    are the same for both versions.
+
+    Parameters
+    ----------
+    X, Y : array-like, optional
+        The coordinates of the values in *Z*.
+
+        ,*X* and *Y* must both be 2D with the same shape as *Z* (e.g.
+        created via `numpy.meshgrid`), or they must both be 1-D such
+        that ``len(X) == N`` is the number of columns in *Z* and
+        ``len(Y) == M`` is the number of rows in *Z*.
+
+        ,*X* and *Y* must both be ordered monotonically.
+
+        If not given, they are assumed to be integer indices, i.e.
+        ``X = range(N)``, ``Y = range(M)``.
+
+    Z : (M, N) array-like
+        The height values over which the contour is drawn.  Color-mapping is
+        controlled by *cmap*, *norm*, *vmin*, and *vmax*.
+
+    levels : int or array-like, optional
+        Determines the number and positions of the contour lines / regions.
+
+        If an int *n*, use `~matplotlib.ticker.MaxNLocator`, which tries
+        to automatically choose no more than *n+1* "nice" contour levels
+        between minimum and maximum numeric values of *Z*.
+
+        If array-like, draw contour lines at the specified levels.
+        The values must be in increasing order.
+
+    Returns
+    -------
+    `~.contour.QuadContourSet`
+
+    ......
+#+end_example
+
+The issue comes from the ~_process_args~ function on ~QuadContourSet~
+
+#+caption: L1374-1390 lib/matplotlib/contour.py
+#+begin_example jupyter-python
+class QuadContourSet(ContourSet):
+    """
+    Create and store a set of contour lines or filled regions.
+
+    This class is typically not instantiated directly by the user but by
+    `~.Axes.contour` and `~.Axes.contourf`.
+
+    %(contour_set_attributes)s
+    """
+
+    def _process_args(self, *args, corner_mask=None, algorithm=None, **kwargs):
+        """
+        Process args and kwargs.
+        """
+        if isinstance(args[0], QuadContourSet):
+            if self.levels is None:
+                self.levels = args[0].levels
+#+end_example
+
+
+=_process_args= takes in a variable number of arguments using ~*args~ so when the =Z= data is passed as a kwarg using ~Z=a~, ~args~ is now an empty tuple. The expected behaviour would be that it just plots the =Z= data.
+
+#+begin_src jupyter-python
+fig, ax = plt.subplots()
+ax.contour(np.random.rand(30, 30))
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+: <matplotlib.contour.QuadContourSet at 0x7f4fbb167790>
+[[file:./.ob-jupyter/f91e4232bb3a5b0224b8735f498702f31159a717.png]]
+:END:
+
+A simple fix would be to first check that there are ~args~. This can be done by changing the ~if~ condition to the following
+
+#+begin_example diff
+- if isinstance(args[0], QuadContourSet):
++ if args and isinstance(args[0], QuadContourSet):
+#+end_example
+
+This results in:
+
+#+begin_src jupyter-python
+%autoreload
+fig, ax = plt.subplots()
+ax.contour(Z=np.random.rand(30, 30))
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+# [goto error]
+#+begin_example
+---------------------------------------------------------------------------
+IndexError                                Traceback (most recent call last)
+Cell In [5], line 3
+      1 get_ipython().run_line_magic('autoreload', '') 2 fig, ax = plt.subplots()
+----> 3 ax.contour(Z=np.random.rand(30, 30))
+
+File ~/Documents/matplotlib/lib/matplotlib/__init__.py:1448, in _preprocess_data.<locals>.inner(ax, data, *args, **kwargs)
+   1445 @functools.wraps(func)
+   1446 def inner(ax, *args, data=None, **kwargs):
+   1447     if data is None:
+-> 1448         return func(ax, *map(sanitize_sequence, args), **kwargs)
+   1450     bound = new_sig.bind(ax, *args, **kwargs)
+   1451     auto_label = (bound.arguments.get(label_namer)
+   1452                   or bound.kwargs.get(label_namer))
+
+File ~/Documents/matplotlib/lib/matplotlib/axes/_axes.py:6427, in Axes.contour(self, *args, **kwargs)
+   6418 """
+   6419 Plot contour lines.
+   6420
+   (...)
+   6424 %(contour_doc)s
+   6425 """
+   6426 kwargs['filled'] = False
+-> 6427 contours = mcontour.QuadContourSet(self, *args, **kwargs)
+   6428 self._request_autoscale_view()
+   6429 return contours
+
+File ~/Documents/matplotlib/lib/matplotlib/contour.py:769, in ContourSet.__init__(self, ax, levels, filled, linewidths, linestyles, hatches, alpha, origin, extent, cmap, colors, norm, vmin, vmax, extend, antialiased, nchunk, locator, transform, negative_linestyles, *args, **kwargs)
+    765 if self.negative_linestyles is None:
+    766     self.negative_linestyles = \
+    767         mpl.rcParams['contour.negative_linestyle']
+--> 769 kwargs = self._process_args(*args, **kwargs)
+    770 self._process_levels()
+    772 self._extend_min = self.extend in ['min', 'both']
+
+File ~/Documents/matplotlib/lib/matplotlib/contour.py:1415, in QuadContourSet._process_args(self, corner_mask, algorithm, *args, **kwargs)
+   1412         corner_mask = mpl.rcParams['contour.corner_mask']
+   1413 self._corner_mask = corner_mask
+-> 1415 x, y, z = self._contour_args(args, kwargs)
+   1417 contour_generator = contourpy.contour_generator(
+   1418     x, y, z, name=self._algorithm, corner_mask=self._corner_mask,
+   1419     line_type=contourpy.LineType.SeparateCode,
+   1420     fill_type=contourpy.FillType.OuterCode,
+   1421     chunk_size=self.nchunk)
+   1423 t = self.get_transform()
+
+File ~/Documents/matplotlib/lib/matplotlib/contour.py:1449, in QuadContourSet._contour_args(self, args, kwargs)
+   1447 nargs = len(args)
+   1448 if nargs <= 2:
+-> 1449     z = ma.asarray(args[0], dtype=np.float64)
+   1450     x, y = self._initialize_x_y(z)
+   1451     args = args[1:]
+
+IndexError: tuple index out of range
+#+end_example
+[[file:./.ob-jupyter/7894eb34c94f6e75f93ee0ef2ee7dacb0b661f8d.png]]
+:END:
+
+Okay, it does go beyond the previous error statement but now ~_contour_args~ errors out because of the same reason. A better solution to this would be to actually validate and error out if none of X, Y or Z is given in ~contour~ / ~contourf~. To do this, we can change the validation in ~_contour_args~ to check for non-zero value for ~len(args)~.
+
+#+begin_src diff python
+-       if nargs <= 2:
+-           z = ma.asarray(args[0], dtype=np.float64)
+-           x, y = self._initialize_x_y(z)
+-           args = args[1:]
+-       elif nargs <= 4:
+-           x, y, z = self._check_xyz(args[:3], kwargs)
+-           args = args[3:]
+-       else:
+-           raise _api.nargs_error(fn, takes="from 1 to 4", given=nargs)
++       if 0 < nargs <= 2:
++           z = ma.asarray(args[0], dtype=np.float64)
++           x, y = self._initialize_x_y(z)
++           args = args[1:]
++       elif 2 < nargs <= 4:
++           x, y, z = self._check_xyz(args[:3], kwargs)
++           args = args[3:]
++       else:
++           raise _api.nargs_error(fn, takes="from 1 to 4", given=nargs)
+#+end_src
+
+This will let it pass to the ~else~ block error check which will raise correctly.
+
+#+begin_src jupyter-python
+fig, ax = plt.subplots()
+ax.contour(Z=np.random.rand(30, 30))
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+# [goto error]
+#+begin_example
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+Cell In [7], line 2
+      1 fig, ax = plt.subplots()
+----> 2 ax.contourf(Z=np.random.rand(30, 30))
+
+File ~/Documents/matplotlib/lib/matplotlib/__init__.py:1448, in _preprocess_data.<locals>.inner(ax, data, *args, **kwargs)
+   1445 @functools.wraps(func)
+   1446 def inner(ax, *args, data=None, **kwargs):
+   1447     if data is None:
+-> 1448         return func(ax, *map(sanitize_sequence, args), **kwargs)
+   1450     bound = new_sig.bind(ax, *args, **kwargs)
+   1451     auto_label = (bound.arguments.get(label_namer)
+   1452                   or bound.kwargs.get(label_namer))
+
+File ~/Documents/matplotlib/lib/matplotlib/axes/_axes.py:6443, in Axes.contourf(self, *args, **kwargs)
+   6434 """
+   6435 Plot filled contours.
+   6436
+   (...)
+   6440 %(contour_doc)s
+   6441 """
+   6442 kwargs['filled'] = True
+-> 6443 contours = mcontour.QuadContourSet(self, *args, **kwargs)
+   6444 self._request_autoscale_view()
+   6445 return contours
+
+File ~/Documents/matplotlib/lib/matplotlib/contour.py:769, in ContourSet.__init__(self, ax, levels, filled, linewidths, linestyles, hatches, alpha, origin, extent, cmap, colors, norm, vmin, vmax, extend, antialiased, nchunk, locator, transform, negative_linestyles, *args, **kwargs)
+    765 if self.negative_linestyles is None:
+    766     self.negative_linestyles = \
+    767         mpl.rcParams['contour.negative_linestyle']
+--> 769 kwargs = self._process_args(*args, **kwargs)
+    770 self._process_levels()
+    772 self._extend_min = self.extend in ['min', 'both']
+
+File ~/Documents/matplotlib/lib/matplotlib/contour.py:1415, in QuadContourSet._process_args(self, corner_mask, algorithm, *args, **kwargs)
+   1412         corner_mask = mpl.rcParams['contour.corner_mask']
+   1413 self._corner_mask = corner_mask
+-> 1415 x, y, z = self._contour_args(args, kwargs)
+   1417 contour_generator = contourpy.contour_generator(
+   1418     x, y, z, name=self._algorithm, corner_mask=self._corner_mask,
+   1419     line_type=contourpy.LineType.SeparateCode,
+   1420     fill_type=contourpy.FillType.OuterCode,
+   1421     chunk_size=self.nchunk)
+   1423 t = self.get_transform()
+
+File ~/Documents/matplotlib/lib/matplotlib/contour.py:1456, in QuadContourSet._contour_args(self, args, kwargs)
+   1454     args = args[3:]
+   1455 else:
+-> 1456     raise _api.nargs_error(fn, takes="from 1 to 4", given=nargs)
+   1457 z = ma.masked_invalid(z, copy=False)
+   1458 self.zmax = float(z.max())
+
+TypeError: contourf() takes from 1 to 4 positional arguments but 0 were given
+#+end_example
+[[file:./.ob-jupyter/7894eb34c94f6e75f93ee0ef2ee7dacb0b661f8d.png]]
+:END:
+*** Allow extracting X, Y, Z as kwargs
+Another way to resolve this would be to allow passing all 3 - X, Y, Z - as keyword arguments and extracting them before checking for positional arguments. This is a better long term solution and can be achieved by adding a few extra checks in ~_contour_args~.
+
+#+begin_src diff python
+@@ -1446,11 +1447,26 @@ class QuadContourSet(ContourSet):
+         else:
+             fn = 'contour'
+         nargs = len(args)
+-        if nargs <= 2:
++        if "X" in kwargs and "Y" in kwargs and "Z" in kwargs:
++            x, y, z = self._check_xyz(
++                [
++                    kwargs.pop("X"),
++                    kwargs.pop("Y"),
++                    kwargs.pop("Z")
++                ],
++                kwargs
++            )
++        elif (("X" in kwargs) ^ ("Y" in kwargs)) and "Z" in kwargs:
++            raise KeyError("Both 'X' and 'Y' must be passed as kwargs. "
++                           "Passing only one of the two is not allowed.")
++        elif "Z" in kwargs:
++            z = ma.asarray(kwargs.pop("Z"), dtype=np.float64)
++            x, y = self._initialize_x_y(z)
++        elif 0 < nargs <= 2:
+             z = ma.asarray(args[0], dtype=np.float64)
+             x, y = self._initialize_x_y(z)
+             args = args[1:]
+-        elif nargs <= 4:
++        elif 2 < nargs <= 4:
+             x, y, z = self._check_xyz(args[:3], kwargs)
+             args = args[3:]
+         else:
+#+end_src
+
+Checking this solution:
+
+#+begin_src jupyter-python :results file :file ../assets/contour.png
+plt.contour(Z=np.random.rand(30, 30))
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+: <matplotlib.contour.QuadContourSet at 0x7febfbe76f50>
+[[file:../assets/contour.png]]
+:END:
+** Tests
+3 main tests need to be added for this bugfix.
+1. Z kwarg only check
+   #+begin_src jupyter-python
+def test_countour_z_kwargonly():
+    # Smoke test for GH#24743
+    # Passing only kwargs
+    plt.contour(Z=np.random.rand(30, 30))
+   #+end_src
+2. Pass all kwargs X, Y, Z
+   #+begin_src jupyter-python
+def test_contour_xyz_kwargsonly():
+    plt.contour(X=np.random.rand(30, 30), Y=np.random.rand(30, 30), Z=np.random.rand(30, 30))
+   #+end_src
+3. Pass Z and either one of X/Y. This should raise an error
+   #+begin_src jupyter-python
+def test_contour_either_xy():
+    with pytest.raises(KeyError):
+        plt.contour(X=np.random.rand(30, 30), Z=np.random.rand(30, 30))
+   #+end_src

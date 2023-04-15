@@ -1,0 +1,93 @@
+:PROPERTIES:
+:ID:       3388e685-22b0-4b9a-9ae8-396f5d6efd48
+:ROAM_REFS: https://github.com/matplotlib/matplotlib/issues/24790
+:END:
+#+title: [Bug]: Polar plot wrong Y values when set_ylim is used · Issue #24790 · matplotlib/matplotlib
+#+property: header-args :session /home/chahak/.local/share/jupyter/runtime/kernel-5bcd5298-c2c7-4984-9acb-2f703fefdf5d.json :async yes :exports both :eval no-export
+#+filetags:  
+Reference URL: https://github.com/matplotlib/matplotlib/issues/24790
+
+Autoreload modules [[id:89f6cafa-b868-4e66-b27f-cee4db5f0f73][autoreload with ipython]]
+#+begin_src jupyter-python
+%load_ext autoreload
+%autoreload 3
+#+end_src
+
+* Bug reproduction
+#+begin_src jupyter-python :session bug
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, np.pi/2., num=90)
+y = np.full(90, 5)
+
+fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+ax.set_ylim(4, 10)
+# Line drawn correctly at y=5
+ax.plot(x, y)
+# Line drawn correctly if the following line is commented.
+fig.canvas.draw()
+# Line now drawn incorrectly at y=1
+# ax.set_ylim(0, 6)
+plt.show()
+#+end_src
+
+#+RESULTS:
+[[file:./.ob-jupyter/ba803095934a25ea3c7ea90ce48f61d8fc512c4d.png]]
+
+The plot has the line in the wrong position (=y=1=) instead of =y=5= if ~ax.set_ylim(0, 10)~ is kept in.
+* Debugging
++ First step to debug this would be to make sure that this happens only in polar plots and not otherwise.
+  #+begin_src jupyter-python
+x = np.linspace(0, np.pi/2., num=90)
+y = np.full(90, 5)
+
+fig, ax = plt.subplots()
+ax.set_ylim(4, 10)
+# Line drawn correctly at y=5
+ax.plot(x, y)
+# Line drawn correctly if the following line is commented.
+fig.canvas.draw()
+# Line now drawn incorrectly at y=1
+ax.set_ylim(0, 10)
+
+plt.show()
+  #+end_src
+
+  #+RESULTS:
+  [[file:./.ob-jupyter/0f4ebd82cb3f48773ca973f545604b2bb194fd14.png]]
+
+  This line gets drawn correctly at =y=5=, so the bug exists only for polar plots.
+
++ Step through the ~draw~ function to see where it goes wrong.
+
+  #+begin_src jupyter-python
+fig.canvas.draw??
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+Signature: fig.canvas.draw()
+Docstring:
+Render the `.Figure`.
+
+This method must walk the artist tree, even if no output is produced,
+because it triggers deferred work that users may want to access
+before saving output to disk. For example computing limits,
+auto-limits, and tick values.
+Source:
+    def draw(self):
+        # docstring inherited
+        self.renderer = self.get_renderer()
+        self.renderer.clear()
+        # Acquire a lock on the shared font cache.
+        with RendererAgg.lock, \
+             (self.toolbar._wait_cursor_for_draw_cm() if self.toolbar
+              else nullcontext()):
+            self.figure.draw(self.renderer)
+            # A GUI class may be need to update a window using this draw, so
+            # don't forget to call the superclass.
+            super().draw()
+File:      ~/Documents/matplotlib/lib/matplotlib/backends/backend_agg.py
+Type:      method
+  #+end_example

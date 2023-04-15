@@ -1,0 +1,69 @@
+:PROPERTIES:
+:ID:       9bd6b934-1660-43b1-adf2-703cf074a191
+:END:
+#+TITLE: Estimating residence-time matrix
+#+PROPERTY: header-args :session restime :eval no-export
+#+filetags: monte_carlo
+
+Extending Notes on: Horne, J. S., Garton, E. O., Krone, S. M., & Lewis, J. S. (2007): Analyzing Animal Movements Using  Brownian Bridges, we now want to calculate the residence-time matrix for various polygons (AGEBs). To do this, we will use the =geopandas= library along with the data from Hermisillo that we have for a set of individuals. We will currently work with the data of just one individual.
+
+* AGEB data
+The data for the AGEBs was provided by INEGI (National Institute of Statistics and Geography). There are a total of 582 AGEBs of which we might discard some that are not of interest. From the data, we particularly care about =CVE_AGEB= and the geometry - which is a polygon.
+
+#+begin_src python :results value
+import geopandas as gpd
+
+data = gpd.read_file("/home/boticelli/Documents/uta/code/residence-time/bbmm-drive/26a.shp")
+data.head()
+#+end_src
+
+#+RESULTS:
+:           CVEGEO CVE_ENT  ... CVE_AGEB                                           geometry
+: 0  2603000010470      26  ...     0470  POLYGON ((1627481.293 1926891.737, 1627485.262...
+: 1  260300001750A      26  ...     750A  POLYGON ((1622934.581 1922134.505, 1622929.451...
+: 2  2603000010108      26  ...     0108  POLYGON ((1626967.321 1927003.078, 1626806.546...
+: 3  2603000018211      26  ...     8211  POLYGON ((1622094.880 1921215.016, 1622108.872...
+: 4  2603000018669      26  ...     8669  POLYGON ((1624881.935 1914255.530, 1624877.914...
+: 
+: [5 rows x 6 columns]
+
+We can confirm that there are 582 AGEBs by checking the number of rows in the dataframe =data=.
+
+#+begin_src python :results output, value
+  len(data)
+#+end_src
+
+#+RESULTS:
+: 582
+
+Each =GeoSeries= has a corresponding /CRS/ (Coordinate Reference System) that defines the system used for the projection. If a =GeoDataFrame= has only one column that corresponds to a =GeoSeries=, then the CRS of that series corresponds to the CRS of the dataframe. A dataframe can also have multiple =GeoSeries=, each with their own corresponding CRS. In such a case, one of the series is designated as the active geometry column and is used by default for any geometrical operations.
+
+#+begin_src python :results output, value
+data.crs
+#+end_src
+
+#+RESULTS:
+: PROJCS["MEXICO_ITRF_2008_LCC",GEOGCS["ITRF2008",DATUM["International_Terrestrial_Reference_Frame_2008",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","1061"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433],AUTHORITY["EPSG","8999"]],PROJECTION["Lambert_Conformal_Conic_2SP"],PARAMETER["latitude_of_origin",12],PARAMETER["central_meridian",-102],PARAMETER["standard_parallel_1",17.5],PARAMETER["standard_parallel_2",29.5],PARAMETER["false_easting",2500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
+
+Here, the data we have is in the "MEXICO_ITRF_2008_LCC" system. We will now transform the system to a Pseudomercator system for ease of use. This can be done using the =geopandas.GeoDataFrame.to_crs= function. The EPSG code corresponding to Pseudomercator projection is /EPSG:3857/.
+
+#+begin_src python :results output, value
+data.to_crs("EPSG:3857", inplace=True)
+#+end_src
+
+#+RESULTS:
+: None
+
+We can also visualize this data using plotting functionality in geopandas and matplotlib.
+
+#+begin_src python :results drawer
+import matplotlib.pyplot as plt
+
+data.plot(figsize=(5,5))
+plt.savefig('/home/boticelli/Documents/uta/code/residence-time/agebs.png')
+#+end_src
+
+#+RESULTS:
+:results:
+None
+:end:

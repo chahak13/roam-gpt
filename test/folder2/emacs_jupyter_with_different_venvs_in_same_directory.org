@@ -1,0 +1,12 @@
+:PROPERTIES:
+:ID:       cef718bd-9e51-4679-ab6e-2013e58b5aad
+:END:
+#+title: emacs-jupyter with different venvs in same directory
+
+Because of my setup, whenever I open an org buffer in the blog's directory and start a jupyter REPL in it, it uses the =direnv= package with emacs and =pipenv= to activate the virtual env corresponding to the blog. Now, if for some reason I want the repl to connect to a venv from a different directory/project (ex. matplotlib), this can be done by first starting a kernel in that directory in a shell using the following command:
+
+#+begin_example shell
+jupyter kernel
+#+end_example
+
+and then using the kernel file (location given in the output of the above command) as the value for the =:session= header arg in the org file.

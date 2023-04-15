@@ -1,0 +1,183 @@
+                    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                     EXPORT SOURCE CODE OF TEX FILE
+
+                              Chahak Mehta
+                    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+Table of Contents
+─────────────────
+
+1. [Export source code of tex file]
+.. 1. Answer 1
+.. 2. Answer 2
+.. 3. Answer 3
+.. 4. Answer 4
+
+
+
+
+
+1 [Export source code of tex file]
+══════════════════════════════════
+
+  I have to create a training guide for Maple as part of an assignment.
+  Obviously I need to hand in the final PDF document, but I also need to
+  hand in the LaTeX source code to prove that I created the document
+  using LaTeX. Is there a way of exporting the source code with all the
+  colours, indentation etc. still in place?
+
+  Comments
+  ⁃ (/JP-Ellis/) Welcome to LaTeX! Welcome to TeX.SX! Just to clarify,
+    where are you intending to export the LaTeX source? Are you looking
+    to embed the TeX file into the PDF? or do you want to pretty-print
+    the LaTeX source?
+  ⁃ (/George Wilson/) Ideally, the LaTeX source code would follow the
+    actual PDF document.
+  ⁃ (/jamesqf/) I think you have a major misunderstanding here. The
+    colors you may see as you write your LaTeX source (I’m assuming you
+    mean syntax colorization?) are not part of LaTeX or the source file,
+    they are applied by whatever editor you’re using to write the LaTeX
+    code. Likewise, there’s no need to ’export’ the LaTeX file, as your
+    editor should already have saved it on your hard drive. Indentation
+    is a part of that file. You can, as others have said, include that
+    file in your LaTeX document, or you can simply print it as a plain
+    text file.
+  ⁃ (/Bakuriu/) When they tell you to provide the sources it means you
+    just hand them the .tex file so that they can compile them and check
+    the output pdf is the same you handed in…
+
+
+[Export source code of tex file]
+<https://tex.stackexchange.com/questions/296758/export-source-code-of-tex-file>
+
+1.1 Answer 1
+────────────
+
+  Here is a `tcolorbox' - `listings' way of inputting the document
+  itself to the file and displaying the code.
+  ┌────
+  │ \documentclass{article}
+  │ 
+  │ 
+  │ \usepackage[most]{tcolorbox}
+  │ 
+  │ \begin{document}
+  │ This is my nice \LaTeXe{} file.
+  │ 
+  │ It shows the code of itself:
+  │ 
+  │ \tcbinputlisting{breakable,listing file=\jobname.tex,listing only,colback=white!40!yellow,sharp corners}
+  │ \end{document}
+  │ 
+  └────
+  [[<https://i.stack.imgur.com/eApUH.png>][]] For breakable boxes:
+  ┌────
+  │ \documentclass{article}
+  │ \usepackage[T1]{fontenc}
+  │ \usepackage[utf8]{inputenc}
+  │ 
+  │ \usepackage[most]{tcolorbox}
+  │ 
+  │ \begin{document}
+  │ This is my nice \LaTeXe{} file.
+  │ 
+  │ It shows the code of it self -- and here is some blind text to make the text longer
+  │ 
+  │ 
+  │ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus. Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel, luctus pulvinar, hendrerit id, lorem. Maecenas nec odio et ante tincidunt tempus. Donec vitae sapien ut libero venenatis faucibus. Nullam quis ante. Etiam sit amet orci eget eros faucibus tincidunt. Duis leo. Sed fringilla mauris sit amet nibh. Donec sodales sagittis magna. Sed consequat, leo eget bibendum sodales, augue velit cursus nunc, quis gravida magna mi a libero. Fusce vulputate eleifend sapien. Vestibulum purus quam, scelerisque ut, mollis sed, nonummy id, metus. Nullam accumsan lorem in dui. Cras ultricies mi eu turpis hendrerit fringilla. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; In ac dui quis mi consectetuer lacinia. Nam pretium turpis et arcu. Duis arcu tortor, suscipit eget, imperdiet nec, imperdiet iaculis, ipsum. Sed aliquam ultrices mauris. Integer ante arcu, accumsan a, consectetuer eget, posuere ut, mauris. Praesent adipiscing. Phasellus ullamcorper ipsum rutrum nunc. Nunc nonummy metus. Vestibulum volutpat pretium libero. Cras id dui. Aenean ut 
+  │ 
+  │ \tcbinputlisting{breakable,listing file=\jobname.tex,listing only,colback=white!40!yellow,sharp corners}
+  │ \end{document}
+  │ 
+  └────
+  []] [[https://i.stack.imgur.com/GANeH.png][]
+
+  Comments:
+  ⁃ (/George Wilson/) I love that. My source code spans over many pages
+    (over 300 lines at the moment) and this solution seems to not split
+    the code over several pages. How can I solve this?
+  ⁃ (/user31729/) @Will: Add the breakable option to the
+    \tcbinputlisting options. See the updated code (but i did not add a
+    new screen shot (yet))
+  ⁃ (/George Wilson/) Just added that argument in. Thanks a lot, looks
+    great!
+  ⁃ (/George Wilson/) Another question, when the inputted code is in
+    math mode, it goes off the screen. How can I prevent this?
+  ⁃ (/user31729/) @Will: That’s another question ;-)
+
+
+[]] [[https://i.stack.imgur.com/GANeH.png][]
+<https://i.stack.imgur.com/wbGAM.png>
+
+
+1.2 Answer 2
+────────────
+
+  One possibility is to simply input the TeX file in a verbatim
+  environment. A really neat option is the [`minted'] package which has
+  nice syntax highlighting:
+  ┌────
+  │ \documentclass{article}
+  │ 
+  │ \usepackage{minted}
+  │ \usepackage{mwe}
+  │ 
+  │ \begin{document}
+  │ 
+  │ \blinddocument
+  │ 
+  │ \clearpage
+  │ 
+  │ \inputminted[bgcolor=gray!10]{latex}{will.tex}
+  │ 
+  │ \end{document}
+  │ 
+  └────
+  This places, on the last page, the following:
+  [[<https://i.stack.imgur.com/YgIDW.png>][]] You can customize the
+  appearance of the output in minted. If you don’t like `minted', there
+  are other packages to typeset code as well and you should be able to
+  use them in essentially the same way. Have a search through this
+  website to see a few other options.
+
+  Comments:
+
+
+[`minted'] <http://ctan.org/pkg/minted>
+
+
+1.3 Answer 3
+────────────
+
+  I use this construction in the `\LaTeX' source for exercises for my
+  students
+  ┌────
+  │ \usepackage{verbatim}    
+  │ ...
+  │ \newpage
+  │ \emph{
+  │ Here is the \LaTeX{} source for this document. You can cut it from the
+  │ pdf and use it to start your answers. I used the \verb!\jobname! 
+  │ \emph{macro for the source file name, so you can call your file by any
+  │   name you like.}
+  │ \verbatiminput{\jobname}
+  │ \end{document}
+  │ 
+  └────
+
+  Comments:
+
+
+1.4 Answer 4
+────────────
+
+  try
+  ┌────
+  │ \begin{verbatimwrite}{myfile}
+  │ 
+  │ \end{verbatimwrite}
+  │ 
+  └────
+
+  Comments:

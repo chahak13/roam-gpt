@@ -1,0 +1,6 @@
+:PROPERTIES:
+:ID:       a3c04525-6971-4a05-813e-1c6d8b7ecbfe
+:ROAM_REFS: https://blog.pragmaticengineer.com/uber-app-rewrite-yolo/?utm_source=tldrnewsletter
+:END:
+#+TITLE: Uber's Crazy YOLO App Rewrite, From the Front Seat - The Pragmatic Engineer
+

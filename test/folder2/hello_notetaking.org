@@ -1,0 +1,8 @@
+:PROPERTIES:
+:ID:       0bcde241-4d39-4057-b82a-17358a4081d1
+:END:
+#+title: Hello note-taking
+[[id:21f7b5a0-0a11-4e47-a459-6b56fba583aa][Setup for org-roam and its compatriots]]
+
+This is the first +note+ step to note-taking...
+

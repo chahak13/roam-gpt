@@ -1,0 +1,7 @@
+:PROPERTIES:
+:ID:       92eb53db-7b99-4feb-be0e-1d236a638bed
+:ROAM_REFS: https://engineering.fb.com/2021/07/14/security/whatsapp-multi-device/
+:END:
+#+TITLE: How WhatsApp enables multi-device capability - Facebook Engineering
+
+//

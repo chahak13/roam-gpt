@@ -1,0 +1,39 @@
+#+title: zotero workflow into emacs?
+
+* [[https://emacs.stackexchange.com/questions/24725/zotero-workflow-into-emacs][zotero workflow into emacs?]]
+
+is there a facility people use to export plain text to emacs orgmode as part of their research workflow to organise their links and annotations? I heard zotxt is useful, does anyone have opinions on it or of something better?
+
+Comments
+
+** Answer 1
+
+There isn't a single tool, but there are numerous packages that might be helpful if you use Zotero and Emacs alongside one another. There are [[http://www.mkbehr.com/posts/a-research-workflow-with-zotero-and-org-mode/][various]] [[http://iflysib14.iflysib.unlp.edu.ar/tomas/en/blog/reference-management.html][online]] [[https://tincman.wordpress.com/2011/01/04/research-paper-management-with-emacs-org-mode-and-reftex/][tutorials]] which discuss setting up combinations of these to the individual author's taste.
+Rather than repeating these, I'll try and give an overview, since it's not completely clear from your question what you'd like to do.
+Consider first that the "research workflow", so far as research literature is concerned, has various steps, such as:
+In "standard" Zotero, Zotero does 1 to 6, and the Zotero word-processor plug-in does 7 and 8.
+I'd suggest thinking first what you want Emacs to do, and what you like about Zotero. You can manage bibliographies and write scientific papers entirely within Emacs; plenty of people do. Instead of Zotero's database bibliographic information is stored in a Bib(La)Tex (~.bib~) file, and citations added to LaTeX, org or markdown files.
+But in my view Zotero has particular strengths at 1-4 (adding and managing data) and at 6 (it has a very fast and powerful search tool). Annotating (5) is relatively weak, because the simple text editor is uncomfortable if you're used to Emacs. And if you author your own papers in Emacs you need something that does tasks 7 and 8.
+If you're using Emacs side-by-side with Zotero, Emacs needs some way to see what you have in your database. The best way to do this is to export a ~.bib~ file, for which format Emacs has extensive support, from Zotero.
+This can be done manually, but packages like [[https://github.com/vspinu/zotelo][~zotelo~]] or the fork [[https://gist.github.com/andersjohansson/fa7ca643782771b6e15da41514e1358a][~emacs-zotero-bib-fetch~]] will allow you to quickly keep the ~.bib~ file up-to-date from within Emacs. ~zotelo~ requires Mozrepl, which is currently [[https://github.com/vspinu/zotelo/issues/34][not supported]] by Firefox Quantum, so I recommend using ~emacs-zotero-bib-fetch~.
+Once you have a ~.bib~ file, the in-built package ~reftex~, as well as [[https://github.com/jkitchin/org-ref][~org-ref~]] and [[https://github.com/tmalsburg/helm-bibtex][~helm-bibtex~]] will let you search your bibliographic data. One or both of these latter packages is likely to be very helpful; they do a number of tasks from the list above, including facilities for making notes.
+~helm-bibtex~ is particularly clever at finding PDFs linked to bibliographic items, which you can then open in Emacs. [[https://github.com/politza/pdf-tools][~pdf-tools~]] is an excellent alternative PDF viewer within Emacs. It allows you to view and create annotations within the PDF file. If you like using PDF files this way, the [[http://zotfile.com][~zotfile~]] extension for Zotero can extract annotations automatically into a Zotero note.
+~helm-bibtex~ and ~org-ref~ packages both have facilities for adding notes to bibliographic items. These are stored as org files. 
+Once I have finished my notes on an item I do ~C-c C-e h o~ to export an HTML version and copy and paste this back into Zotero as a note so that it is searchable. I haven't found a slicker way to do this.
+This is partly dependent on what format you write (org, reftex, markdown) and partly dependent on what format you want at the end (PDF, HTML).
+Again, both ~helm-bibtex~ and ~org-ref~ as well as ~reftex~ allow inserting citations into documents you are writing of any of these types.
+Assuming you are writing in org, there is (not yet) a standard citation syntax, but org-ref provides one. Other people just use the LaTeX citation commands directly in org.
+If your primary output target is PDF, then ~org-mode~'s own exporting (via LaTeX) is likely the easiest route.
+You mention ~zotxt~; I haven't used this, but it appears to be a tool for resolving and formatting citations in plain text files, including support for ~pandoc~. Pandoc markdown /does/ have a standard citation format and support for resolving and formatting bibliographies (using CSL). Pandoc may be preferable if you want to export primarily to multiple formats (e.g. HTML, markdown).
+
+ Comments:
+
+
+** Answer 2
+
+Generally I use emacs' [[https://orgmode.org/][org-mode]] for organizing projects, tasks, and ideas, but Zotero is helpful for storing resources like PDFs / websites, etc. when researching something.  To combine the two, it is nice to be able to link from org-mode to the location within Zotero where a resource is.
+[[https://zoteromusings.wordpress.com/2013/04/23/zotero-item-uris-from-client/][This blog post]] describes a means of getting Zotero URLs that works fairly well:
+Now whenever you are viewing an item in Zotero, if you press ~Ctrl+Alt+C~ (or ~Cmd+Shift+C~ on a Mac), a URL will be copied to the clipboard.  This URL refers to an item within Zotero and will open Zotero to view the item.  The URL can be pasted into an org-mode file (or any other kind of document).
+
+ Comments:
+

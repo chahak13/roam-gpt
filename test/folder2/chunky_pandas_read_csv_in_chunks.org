@@ -1,0 +1,8 @@
+:PROPERTIES:
+:ID:       28d2ab1e-11e9-4897-9bec-0068d086409c
+:END:
+#+TITLE: Chunky Pandas - Read CSV in chunks
+#+DATE: 2021-06-11
+#+filetags: python
+
+Huge CSV files are a pain to read as they start overloading RAM a lot. The =read_csv= function provides the ability to read a file in chunks. This is potentially helpful to perform operations on such large files in parts. I'd like to look more into what all can be done using chunking.

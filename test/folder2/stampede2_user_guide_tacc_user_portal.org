@@ -1,0 +1,118 @@
+:PROPERTIES:
+:ID:       d80d1797-aa8a-4823-aa23-9f583748b66d
+:ROAM_REFS: https://portal.tacc.utexas.edu/user-guides/stampede2
+:END:
+#+TITLE: Stampede2 User Guide - TACC User Portal
+#+filetags: us utaustin masters tacc
+
+* System Overview
+
+** KNL Compute Nodes
+Stampede2 has 4,200 Knight's Landing (KNL) compute nodes. An overview of the specifications of each node is as follows
+
+| Model                     | Intel Xeon Phi 7250 ("Knights Landing")                                   |
+| Total cores per KNL node  | 68 cores on a single socket                                               |
+| Hardware threads per core | 4                                                                         |
+| Hardware threads per node | 68 x 4 = 272                                                              |
+| Clock rate                | 1.4GHz                                                                    |
+| RAM                       | 96GB DDR4 plus 16GB high-speed MCDRAM. Configurable in two important ways |
+| Cache                     | 32KB L1 data cache/core; 1MB L2/two-core tile. In default config, MCDRAM  |
+|                           | operates as 16GB direct-mapped L3.                                        |
+
+All but 504 KNL nodes have a 107GB =/tmp= partition on a 200GB Solid State Drive (SSD). The 504 KNLs originally installed as the Stampede1 KNL sub-system each have a 32GB =/tmp= partition on 112GB SSDs. The latter nodes currently make up the development, long and flat-quadrant queues. Size of =/tmp= partitions as of 24 Apr 2018. 
+
+** SKX Compute Nodes
+
+Stampede2 hosts 1,738 SKX compute nodes.
+
+| Model                     | Intel Xeon Platinum 8160 ("Skylake")                                               |
+| Total cores per KNL node  | 48 cores on two socket (24 cores/socket)                                           |
+| Hardware threads per core | 2                                                                                  |
+| Hardware threads per node | 48 x 2 = 96                                                                        |
+| Clock rate                | 2.1GHz nominal (1.4-3.7GHz depending on instruction set and number of active cores |
+| RAM                       | 192GB (2.67GHz) DDR4                                                               |
+| Cache                     | 32KB L1 data cache/core; 1MB L2/core. 33MB L2/socket.                              |
+
+Local storage on the SKX compute nodes is in tthe form of 144GB =/tmp= partitions on a 200GB SSD.
+
+* File Systems
+Stampede2 mounts three shared Lustre file systems on which each user has account-specific directories for =$HOME=, =$WORK=, and =$SCRATCH=. Each of the file systems are available on all Stampede2 nodes.
+
+| File System | Quota                           | Key Features                                                         |
+|-------------+---------------------------------+----------------------------------------------------------------------|
+| =$HOME=     | 10GB; 200,000 files             | *Not intended for parallel or high-intensity file operations*        |
+|             |                                 | Backed up regularly                                                  |
+|             |                                 | ~1PB Overall capacity. 2 Meta-Data Servers, 4 Object Storage Targets |
+|             |                                 | Not purged                                                           |
+|-------------+---------------------------------+----------------------------------------------------------------------|
+| =$WORK=     | 1TB; 3,000,000 files across all | *Not intended for parallel or high-intensity file operations*        |
+|             | TACC systems.                   | On Global Shared FS mounted on most TACC systems.                    |
+|             |                                 | *Not backed up*                                                      |
+|             |                                 | Not purged                                                           |
+|-------------+---------------------------------+----------------------------------------------------------------------|
+| =$SCRATCH=  | no quota                        | Overall ~30PB. 4 Meta-Data Servers. 66 Object Storage Targets        |
+|             |                                 | *Not backed up*                                                      |
+|             |                                 | *Files are subject to purge if access time >10 days old*             |
+
+=$SCRATCH= is a temporary storage space. Files not accessed in last 10 days will be subject to the purging. Reading or executing a file/script will update the access time. =ls -ul= can be used to view access times.
+
+* Accessing the system
+Access to all TACC systems requires setting up MFA. This is done using the TACC Token App. This app provides a token for each login, that needs to be given while using ssh.
+
+*Important:* /If user created TACC account using UT EID, then they'll have to go to the reset password using the email-id provided and create a password that will then be used as a password in ssh./
+
+To initiate a stampede2 ssh session, simply use ssh on the command-line.
+
+#+begin_src shell
+ssh <username>@stampede2.tacc.utexas.edu
+#+end_src
+
+If one wants to connect to a specific login node (not sure when would this be required), then the full domain can be used. For example, to log into the second node, use
+
+#+begin_src shell
+ssh <username>@login2.stampede2.tacc.utexas.edu
+#+end_src
+
+To connect with graphical support (X11), use the normal ssh flags of =-X= or =-Y=.
+
+#+begin_src shell
+ssh -X <username>@stampede2.tacc.utexas.edu
+#+end_src
+
+*Important* =ssh-keygen= should /NOT/ be run on Stampede2. When logging in, it creates the right key-pair by itself.
+
+* Using Stampede2
+
+Stampede2 nodes run *Red Hat Enterprise Linux 7*.
+
+** Configuring account
+
+*** Linux Shell
+The default login shell is *bash*. It can be changed to csh, sh, tcsh, or zsh by submitting a ticket through TACC portal. =chsh= command won't work.
+
+*** Account-level Diagnostics
+TACC has a =sanitytool= module that loads an account-level diagnostics package to detect account-level issues. It also provides fixes for the issues. To run the tool, execute the following commands
+
+#+begin_src shell
+$ module load sanitytool
+$ sanitycheck
+#+end_src
+
+It is a good habit to periodically run =sanitycheck= as preventive measure. To read more help on it, run =module help sanitytool=.
+
+*** File System Usage Recommendations
+| File system | Best practices                             | Best activities      |
+|-------------+--------------------------------------------+----------------------|
+| $HOME       | cron jobs                                  | compiling, editing   |
+|             | small scripts                              |                      |
+|             | environment settings                       |                      |
+|-------------+--------------------------------------------+----------------------|
+| $WORK       | store software installations               | staging datasets     |
+|             | original datasets that can't be reproduced |                      |
+|             | job scripts and templates                  |                      |
+|-------------+--------------------------------------------+----------------------|
+| $SCRATCH    | *Temporary storage*                        | all job I/O activity |
+|             | I/O files                                  |                      |
+|             | job files                                  |                      |
+|             | temporary datasets                         |                      |
+

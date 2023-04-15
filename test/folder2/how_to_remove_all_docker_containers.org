@@ -1,0 +1,154 @@
+:PROPERTIES:
+:ID: how-to-remove-all-docker-containers?
+:END:
+#+title: How to remove all docker containers?
+
+* [[https://stackoverflow.com/questions/52073000/how-to-remove-all-docker-containers][How to remove all docker containers?]]
+
+I use following commands to remove all docker containers:
+#+begin_example 
+docker ps -q | xargs docker stop
+docker ps -aq --no-trunc -f status=exited | xargs docker rm
+
+#+end_example
+But anyway I see containers after:
+#+begin_example 
+$ docker ps -a
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+70cb7107d00d        24820714bfc6        "wait-for-it.sh mysqâ¦"   21 minutes ago      Created                                 sql_migration
+
+#+end_example
+Then I executed command
+#+begin_example 
+ docker rm sql_migration
+
+#+end_example
+And it removed the container.
+Can you please help to correct initial command and explain why it doesn't work.
+Also I would be grateful if you explain how to change contaner to status like ~sql_migration~
+
+Comments
++ (/Robin Topper/) This might be helpful stackoverflow.com/questions/32723111/…
++ (/atline/) Possible duplicate of What does CREATED container mean in docker?
+** Answer 1
+
+To remove all ~exited~ and ~created~ containers but not the ~Up~ (running) ones:
+#+begin_example 
+docker container prune -f
+
+#+end_example
+~-f~ or ~--force~ prevents you from being prompted to answer the following:
+#+begin_example 
+WARNING! This will remove all stopped containers.
+Are you sure you want to continue? [y/N]
+
+#+end_example
+*example:* (Notice at the end that one container is not being removed)
+#+begin_example 
+$ docker ps -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                      PORTS               NAMES
+053ce57276b7        alpine              "/bin/sh"           3 seconds ago       Created                                         eager_meninsky
+55f20431a536        alpine              "/bin/sh"           15 seconds ago      Up 14 seconds                                   hardcore_clarke
+44cbe2dc81b0        alpine              "/bin/sh"           38 seconds ago      Exited (0) 37 seconds ago                       test
+647747afb9a4        alpine              "/bin/sh"           18 hours ago        Exited (137) 18 hours ago                       admiring_visvesvaraya
+
+
+$ docker container prune -f
+Deleted Containers:
+053ce57276b7d7008272e95991cf950268b9b32676b1389ec6e8ab6e6b755dc9
+44cbe2dc81b0522e0fd0e53f28a4d3871b818b9b17681dd011c8680ab37b51e7
+647747afb9a431a2c5040e6aba5119b199b94061c444ff0194aaa809dbf849b8
+
+Total reclaimed space: 0B
+
+
+$ docker ps -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+55f20431a536        alpine              "/bin/sh"           45 seconds ago      Up 44 seconds                           hardcore_clarke
+
+#+end_example
+#+begin_example 
+docker container stop $(docker container ls -aq)
+docker container prune -f
+
+#+end_example
+*example:*
+#+begin_example 
+$ docker ps -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                      PORTS               NAMES
+da7ffd8efb62        alpine              "/bin/sh"           5 seconds ago       Created                                         quirky_poitras
+31cb71a8899c        alpine              "/bin/sh"           20 seconds ago      Exited (0) 13 seconds ago                       elastic_shaw
+becfdc81228c        alpine              "/bin/sh"           25 seconds ago      Up 24 seconds                                   thirsty_murdock
+
+
+$ docker container stop $(docker container ls -aq)
+da7ffd8efb62
+31cb71a8899c
+becfdc81228c
+
+
+$ docker container prune -f
+Deleted Containers:
+da7ffd8efb623677882b1534008e66a1530baa94e0473be537ef5c415c928ba3
+31cb71a8899c47472d0ccb5710e34ff08b4ef142599d4e857e3e69740a2e59b5
+becfdc81228cdf41519102ea780956eed71a86103e849dff3d9f7cca0a54651f
+
+Total reclaimed space: 5B
+
+
+$ docker ps -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+
+#+end_example
+
+ Comments:
++ (/Jed Lynch/) Docker is not as straight forward as I think it could be when it comes to rebuilding containers.  For me, there was a learning curve, and since building environments is not something I do all the time, I forget the exact syntax of the commands.  I will have to remember these commands.
+
+** Answer 2
+
+I use the following command to remove all the docker containers: 
+~docker rm $(docker ps -aq)~
+
+ Comments:
+
+
+** Answer 3
+
+I use the following commands to remove all containers:
+#+begin_example 
+docker stop $(docker ps -aq)
+docker rm $(docker ps -aq)
+
+#+end_example
+
+ Comments:
+
+
+** Answer 4
+
+One liner to stop / remove all of Docker containers:
+~docker stop $(docker ps -a -q)~
+~docker rm $(docker ps -a -q)~
+
+ Comments:
+
+
+** Answer 5
+
+Case 1. In order to remove only *Stopped Containers* use ~sudo docker container prune -f~
+#+begin_example 
+$ docker container prune
+WARNING! This will remove all stopped containers.
+Are you sure you want to continue? [y/N] y
+Deleted Containers:
+4a7f7eebae0f63178aff7eb0aa39cd3f0627a203ab2df258c1a00b456cf20063
+f98f9c2aa1eaf727e4ec9c0283bc7d4aa4762fbdba7f26191f26c97f64090360
+
+Total reclaimed space: 212 B
+
+#+end_example
+Case 2. In order to remove all existing docker containers on system ( In all states -  *running / stopped / exited containers* )  use~sudo docker container ls -aq | xargs sudo docker container rm~,
+*commands explanation*:
+
+ Comments:
+

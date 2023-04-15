@@ -1,0 +1,57 @@
+{
+    "export_source_code_of_tex_file.txt": [
+        "emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt"
+    ],
+    "autoreload_with_ipython.txt": [
+        "emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt"
+    ],
+    "change_font_size_in_emacs.txt": [
+        "emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt"
+    ],
+    "attractors_using_datashader.txt": [
+        "attractors_examples_0_1_0_documentation.txt"
+    ],
+    "config_class_using_chainmaps.txt": [
+        "emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt",
+        "chainmaps_in_python.txt"
+    ],
+    "chunky_pandas_read_csv_in_chunks.txt": [
+        "emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt"
+    ],
+    "attractors_examples_0_1_0_documentation.txt": [
+        "attractors_using_datashader.txt"
+    ],
+    "audio_on_linux.txt": [
+        "emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt"
+    ],
+    "bug_polar_plot_wrong_y_values_when_set_ylim_is_used_issue_24790_matplotlib_matplotlib.txt": [
+        "bug_contour_raises_indexerror_if_z_is_specified_as_keyword_argument_issue_24743_matplotlib_matplotlib.txt"
+    ],
+    "where_are_matplotlib_rcparams_used.txt": [
+        "bug_polar_plot_wrong_y_values_when_set_ylim_is_used_issue_24790_matplotlib_matplotlib.txt"
+    ],
+    "does_plt_scatter_work_with_masked_offsets.txt": [
+        "where_are_matplotlib_rcparams_used.txt"
+    ],
+    "chainmaps_in_python.txt": [
+        "emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt"
+    ],
+    "emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt": [
+        "change_font_size_in_emacs.txt"
+    ],
+    "1_how_scientists_colorize_photos_of_space_youtube.txt": [
+        "attractors_examples_0_1_0_documentation.txt"
+    ],
+    "bug_contour_raises_indexerror_if_z_is_specified_as_keyword_argument_issue_24743_matplotlib_matplotlib.txt": [
+        "bug_polar_plot_wrong_y_values_when_set_ylim_is_used_issue_24790_matplotlib_matplotlib.txt"
+    ],
+    "click_command_line_interfaces:_make_options_required_if_other_optional_option_is_unset.txt": [
+        "emacsconf_2022_talks_emacs_journalism_or_everything_s_a_nail_if_you_hit_it_with_emacs.txt"
+    ],
+    "aaronpenne_generative_art_a_collection_of_my_generative_artwork_mostly_with_processing_in_python_mode.txt": [
+        "where_are_matplotlib_rcparams_used.txt"
+    ],
+    "12_decorator_and_descriptors_advance_python_tutorials_documentation.txt": [
+        "autoreload_with_ipython.txt"
+    ]
+}

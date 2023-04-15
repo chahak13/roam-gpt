@@ -1,0 +1,23 @@
+:PROPERTIES:
+:ID:       e58d329b-d434-491c-91ac-69ce3fe44a78
+:END:
+#+title: Pyro - A Universal Deep Probabilistic Programming language
+#+date: 2022-01-21
+#+author: Chahak Mehta
+#+property: header-args :session pyro :async yes :eval no-export
+
+* Introduction
+[[https://pyro.ai/][Pyro]] is a python library that, as per the website, can be used to perform /"Deep Probabilistic Programming"/ tasks. It was developed by UberAI and then open-sourced back in 2017.
+** Why Deep, Probabilistic Programming, and Universal?
+Pyro is built up on PyTorch, which is one of the two major deep learning libraries in Python (second being Tensorflow by Google). This allows it to leverage all the PyTorch abilities to perform deep learning tasks while working in the probilistic realm. This brings us to the */Probabilistic Programming/* part of the title. Without going into much depth about what bayesian inference, pyro provides a framework to work on such problems instead of just estimating point values. By being a "Probabilistic Programming Language", we can use these interfaces of Pyro to transform the mathematical models into a learnable model. And since it can be used to represent almost any computable probability distribution, it's called as a "Universal" language.
+* Basic Concepts
+** Parameters and Samples
+** Inference methods
+*** SVI
+*** HMC
+*** SVGD
+* Simple Examples
+** Basic Framework
+** Gaussian distribution
+** Poisson distribution
+** Bernoulli's distribution

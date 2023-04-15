@@ -1,0 +1,5 @@
+:PROPERTIES:
+:ID:       96244a3a-d9f5-4570-b9d4-d4faa62b8eb1
+:END:
+#+TITLE: Fetching emails - mbsync
+#+DATE: 2021-05-30

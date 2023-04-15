@@ -1,0 +1,20 @@
+:PROPERTIES:
+:ID:       5ca3ccd1-ce33-46a2-9618-d963fc622e8b
+:END:
+#+title: Most used keybindings in Emacs
+#+FILETAGS: emacs
+
+
+| Keybinding | Function                  | New binding (?) |
+|------------+---------------------------+-----------------|
+| C-x C-f    | find-file                 |                 |
+| C-x b      | switch-buffer             |                 |
+| C-x C-b    | ibuffer-other-window      |                 |
+| C-x p p    | projectile-switch-project |                 |
+| M-o f      | org-roam-node-find        |                 |
+| M-o o      | org-roam-buffer-toggle    |                 |
+| M-o i      | org-roam-node-insert      |                 |
+| C-a        | beginning-of-visual-line  |                 |
+| C-e        | move-end-of-line          |                 |
+|            | org-end-of-line           |                 |
+|            |                           |                 |

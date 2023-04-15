@@ -1,0 +1,132 @@
+:PROPERTIES:
+:ID: github-action:-split-long-command-into-multiple-lines
+:END:
+#+title: Github Action: Split Long Command into Multiple Lines
+
+* [[https://stackoverflow.com/questions/59954185/github-action-split-long-command-into-multiple-lines][Github Action: Split Long Command into Multiple Lines]]
+
+I have a Github action command that is really long:
+#+begin_example 
+name: build
+
+on: [push]
+
+jobs:
+    build:
+        runs-on: ubuntu-18.04
+        steps:
+            - uses: actions/checkout@v1
+            - name: Install Prerequisites
+              run: |
+                sudo apt-get update
+                sudo apt-get install -y --no-install-recommends "a very very long list of prerequisites"
+
+#+end_example
+May I know whether it is possible to split the long command into multiple lines for better readability? I have tried the separator '\' but it does not work. Thanks in advance.
+
+Comments
+
+** Answer 1
+
+I have a multi line command using backslash to separate the lines as follows:
+#+begin_example 
+- name: Configure functions
+  run: |
+    firebase functions:config:set \
+      some.key1="${{ secrets.SOME_KEY_1 }}" \
+      some.key2="${{ secrets.SOME_KEY_2 }}" \
+    ...    
+
+
+#+end_example
+Note the preceding '|' character.
+
+ Comments:
++ (/tom/) This is the correct answer and would be a better accepted answer. The backslashes work the same as a multiline command in bash. (I'd recommend a hanging indent for readability though.)
++ (/dan1st/) Does anyone know since when this is possible? (I think it was not possible when I wrote my answer but I fully agree with that answer being accepted, now)
++ (/Bojian Zheng/) @dan1st I also do not think this is possible by the time I asked this, but it seems that Github people have added the support for backslash.
++ (/mcserep/) I don't know how did it work previously for anyone, but adding a backslash does not work right now with GitHub Actions. This shouldn't be the accepted answer.
++ (/IvanD/) I confirm: this does not work on GitHub Actions as of now. You need to use ">" instead of "I" (see other answers)
+
+** Answer 2
+
+You can use the YAML *folded style* with ~&gt;~ which is supported by GitHub Actions.
+For example,
+#+begin_example 
+run: >
+  xvfb-run
+  ./mvnw -f my/pom.xml
+  clean verify
+  -DskipTests
+
+#+end_example
+newlines will be replaced with spaces so the above is equivalent to
+#+begin_example 
+run: xvfb-run ./mvnw -f my/pom.xml clean verify -DskipTests
+
+#+end_example
+
+ Comments:
++ (/sschuberth/) Also see yaml-multiline.info to play around with the different scalar / chomping styles.
++ (/Johnny Oshika/) This works, thank you! Important note: per yml spec, white space is important here, so any extra tabs before the lines will cause problems.
++ (/OZZIE/) It seems to work but it doesn't fail on any errors, same with | also.. so it becomes kind of pointless..
++ (/ruohola/) @JohnnyOshika Thank you for that comment! It cleared a long standing misunderstanding for me.
++ (/Waldir Leoncio/) Just a quick note about this being for the default shell. For example, my YML file had some bits running R code with shell: Rscript {0}, and line breaking in those cases don't need any special characters (just like in R).
+
+** Answer 3
+
+Going to share this in since it has not been mentioned.
+You can use:
+I found the site [[https://yaml-multiline.info/][yaml-multiline.info]] useful for understanding how yaml strings are interpreted.
+For my use case, I ended up doing the following:
+#+begin_example 
+run: >-
+  for i in $(find . -type f -name "*.log");
+  do
+   echo "File: ${i} \n";
+   cat $i;
+   printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -;
+  done
+
+#+end_example
+
+ Comments:
++ (/silkfire/) What does the hyphen in >- do?
++ (/Arclite/) @silkfire According to the linked website, it appears to strip newlines from the end of the block, so that there's not an extra trailing \n at the end.
++ (/Arclite/) That said, this is not supported by GitHub Actions: github.com/actions/runner/issues/418
+
+** Answer 4
+
+This was not possible using backslashes, earlier. See the accepted answer on how to do it now.
+As far as I know, GitHub Actions does not support that.
+However, you can use environment variables for that.
+For example, this script splits your command in 3 lines of code and executes it as one line.
+#+begin_example 
+steps:
+  - name: Install Prerequisites
+    run: |
+      sudo apt-get update
+      bash -c "$line1 $line2 $line3"
+    env:
+    - line1='sudo apt-get install -y --no-install-recommends '
+    - line2='a very very long list'
+    - line3='of prerequisites'
+
+#+end_example
+It creates the environment variables ~line1~, ~line2~ and ~line3~ and concats and executes them in a bash session.
+
+ Comments:
+
+
+** Answer 5
+
+Note also the [[https://help.github.com/en/actions/reference/contexts-and-expression-syntax-for-github-actions#join][join]] and [[https://help.github.com/en/actions/reference/contexts-and-expression-syntax-for-github-actions#format][format]] functions for expressions: 
+#+begin_example 
+HELLO_WORLD = ${{ join('Hello', 'world!') }}
+HELLO_WORLD = ${{ format('{{Hello {0}}}', 'World') }}
+
+#+end_example
+Presumably these could be combined with env variables.
+
+ Comments:
+

@@ -1,0 +1,95 @@
+:PROPERTIES:
+:ID:       94559093-5f0e-433e-b831-97cf3877f898
+:ROAM_REFS: https://matplotlib.org/stable/gallery/mplot3d/custom_shaded_3d_surface.html#sphx-glr-gallery-mplot3d-custom-shaded-3d-surface-py
+:END:
+#+TITLE: Hillshading in matplotlib
+#+AUTHOR: Chahak Mehta
+#+PROPERTY: header-args :session hillshading :exports both :eval no-export
+#+filetags: matplotlib python
+
+
+Matplotlib provides a light source and shading library. This can be used to create some extremely great and pleasing visualizations - for examples see [[https://twitter.com/astro_turb/status/1392315741177671682?s=09][this]] Twitter post by James Beattie or [[https://twitter.com/noam_vv/status/1392960446391623683][this]] visualization by Noam Vogt-Vincent. This has increased my curiousity about what and how to use this shading module of matplotlib. This particular post will be based on the simple example shown on the matplotlib page ([[https://matplotlib.org/stable/gallery/mplot3d/custom_shaded_3d_surface.html#sphx-glr-gallery-mplot3d-custom-shaded-3d-surface-py][here]]).
+
+Let us first import the required libraries.
+
+#+begin_src jupyter-python :results raw drawer
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import cm, cbook
+from matplotlib.colors import LightSource
+#+end_src
+
+#+RESULTS:
+
+Now that we have the libraries, we need to set up the data that we will use for plotting. We will use the sample data provided in matplotlib.
+
+#+begin_src jupyter-python :results raw drawer
+dem = cbook.get_sample_data("jacksboro_fault_dem.npz", np_load=True)
+z = dem['elevation']
+nrows, ncols = z.shape
+x = np.linspace(dem["xmin"], dem["xmax"], ncols)
+y = np.linspace(dem["ymin"], dem["ymax"], nrows)
+x, y = np.meshgrid(x, y)
+
+region = np.s_[5:50, 5:50]
+x, y, z = x[region], y[region], z[region]
+#+end_src
+
+#+RESULTS:
+
+We will first use this data to plot a simple surface plot without any light sources to see what it adds.
+
+#+begin_src jupyter-python :results file :file ./images/plain_surface.png
+fig, ax = plt.subplots(subplot_kw=dict(projection='3d'), figsize=(8,8))
+surf = ax.plot_surface(x, y, z, rstride=1, cstride=1, linewidth=0, antialiased=False, shade=False, cmap=plt.get_cmap('gist_earth'))
+ax.set_xticks([])
+ax.set_yticks([])
+ax.set_zticks([])
+fig.savefig("./images/plain_surface.png")
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+: []
+[[file:./images/plain_surface.png]]
+:END:
+
+
+Now, if we add a lightsource to this, we should be able to see the differences in the plot in a much better way.
+
+#+begin_src jupyter-python :results file :file ./images/light_surface.png
+fig_l, ax_l = plt.subplots(subplot_kw=dict(projection='3d'), figsize=(8,8))
+ls = LightSource(0, 45)
+rgb = ls.shade(z, cmap=cm.gist_earth, vert_exag=0.1, blend_mode='soft')
+ax_l.plot_surface(x, y, z, rstride=1, cstride=1, facecolors=rgb, linewidth=0, antialiased=False, shade=False)
+ax_l.set_xticks([])
+ax_l.set_yticks([])
+ax_l.set_zticks([])
+fig_l.savefig('./images/light_surface.png')
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+: []
+[[file:./images/light_surface.png]]
+:END:
+
+We will try and animate this lightsource to make its presence more visible.
+
+#+begin_src jupyter-python :results file :file ./images/lightsource.gif
+from matplotlib.animation import FuncAnimation
+
+def update(frame):
+    ax_l.collections = []
+    ls = LightSource(frame%360, 45)
+    rgb = ls.shade(z, cmap=cm.gist_earth, vert_exag=0.1, blend_mode='soft')
+    ax_l.plot_surface(x, y, z, rstride=1, cstride=1, facecolors=rgb, linewidth=0, antialiased=False, shade=False)
+
+anim = FuncAnimation(fig_l, update, frames=360)
+anim.save("./images/lightsource.gif", writer="imagemagick", fps=60)
+# anim.save("./images/lightsource.mp4", writer="ffmpeg", fps=60)
+#+end_src
+
+#+RESULTS:
+
+[[./images/lightsource.gif]]

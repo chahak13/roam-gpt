@@ -1,0 +1,158 @@
+:PROPERTIES:
+:ID:       864fc3b5-0281-4c50-b3fd-331de4f5953f
+:END:
+#+title: Attractors using Datashader
+#+property: header-args :session datashader :async yes :eval no-export :exports both
+
+[[https://datashader.org/getting_started/index.html][Datashader]] is a python visualization library that breaks down the visualization step into different parts with the idea of speeding up by running individual parts on particular hardware. This way it can leverage GPUs too potentially (need to read more). This note is just a proof of concept/toying with the library.
+
+To install, use ~pip install datashader~ (or ~conda~ if in a conda env). It also supports =numba= so that should help speeding up the execution too.
+
+* Clifford Attractors
+Clifford Attractors are strange attractors defined by two iterative equations.
+
+\[
+x_{n+1} = \sin (ay_n) + c \cos (ax_n)\\
+y_{n+1} = \sin (bx_n) + d \cos (by_n)
+\]
+
+#+begin_src jupyter-python
+import numpy as np
+import pandas as pd
+import datashader as ds
+from datashader import transfer_functions as tf
+from datashader.colors import inferno, viridis
+from datashader.utils import export_image
+from numba import jit
+from functools import partial
+#+end_src
+
+#+RESULTS:
+
+Setup system for Clifford Attractor
+
+#+begin_src jupyter-python
+@jit(nopython=True)
+def clifford_attractor(x, y, a=-1.3, b=-1.3, c=-1.8, d=-1.9):
+    return np.sin(a * y) + c * np.cos(a * x), \
+        np.sin(b * x) + d * np.cos(b * y)
+#+end_src
+
+#+RESULTS:
+
+Now, we evaluate this for ~n~ iterations.
+
+#+begin_src jupyter-python
+
+n = 100000000
+
+@jit(nopython=True)
+def trajectory_coords(fn, x0, y0, a, b=0, c=0, d=0, n=n):
+    x, y = np.zeros(n), np.zeros(n)
+    x[0], y[0] = x0, y0
+    # partial_fn = partial(fn, a=a, b=b, c=c, d=d)
+    for i in range(n-1):
+        x[i+1], y[i+1] = fn(x[i], y[i], a=a, b=b, c=c, d=d)
+    return x, y
+
+def trajectory(fn, x0, y0, a, b=0, c=0, d=0, n=n):
+    x, y = trajectory_coords(fn, x0, y0, a, b, c, d)
+    return pd.DataFrame({"x": x, "y": y})
+#+end_src
+
+#+RESULTS:
+
+#+begin_src jupyter-python
+%%time
+df = trajectory(clifford_attractor, 0, 0, -1.244, -1.251, -1.815, -1.908)
+#+end_src
+
+#+RESULTS:
+: CPU times: user 3.74 s, sys: 246 ms, total: 3.99 s
+: Wall time: 3.99 s
+
+Datashader allows aggregating values usinf different types of functions. Here we'll just count the instances of =(x, y)= coordinate being reached by the attractor.
+
+#+begin_src jupyter-python
+cvs = ds.Canvas(plot_width=700, plot_height=700)
+agg = cvs.points(df, "x", "y")
+#+end_src
+
+#+RESULTS:
+
+We can plot this aggregated data using the ~tf.shade~ function.
+
+#+begin_src jupyter-python :results file :file ../assets/clifford_attractor_4.png
+tf.Image.border=0
+img = tf.shade(agg, cmap=inferno)
+# img
+export_image(img, "clifford_attractor_4", export_path="../assets/", )
+#+end_src
+
+#+RESULTS:
+[[file:../assets/clifford_attractor_4.png]]
+
+#+begin_src jupyter-python
+help(ds.colors)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Help on module datashader.colors in datashader:
+
+NAME
+    datashader.colors
+
+FUNCTIONS
+    colormap_select(base_colormap, start=0, end=1.0, reverse=False)
+        Given a colormap in the form of a list, such as a Bokeh palette,
+        return a version of the colormap reversed if requested, and selecting
+        a subset (on a scale 0,1.0) of the elements in the colormap list.
+
+        For instance:
+
+        >>> cmap = ["#000000", "#969696", "#d9d9d9", "#ffffff"]
+        >>> colormap_select(cmap,reverse=True)
+        ['#ffffff', '#d9d9d9', '#969696', '#000000']
+        >>> colormap_select(cmap,0.3,reverse=True)
+        ['#d9d9d9', '#969696', '#000000']
+
+    hex_to_rgb(x)
+        Convert a color hexcode to an rgb tuple.
+
+        Example
+        -------
+        >>> rgb('#FFFFFF')
+        (255, 255, 255)
+
+    rgb(x)
+        Return a triple representing rgb color.
+
+        Can convert colors by name or hexcode. Passing in a valid rgb tuple is
+        idempotent.
+
+        Example
+        -------
+        >>> rgb('plum')
+        (221, 160, 221)
+        >>> rgb('#FFFFFF')
+        (255, 255, 255)
+        >>> rgb((255, 255, 255))
+        (255, 255, 255)
+
+DATA
+    Elevation = ['aqua', 'sandybrown', 'limegreen', 'green', 'green', 'dar...
+    Greys9 = ['#000000', '#252525', '#525252', '#737373', '#969696', '#bdb...
+    Hot = ['black', 'maroon', 'darkred', 'red', 'orangered', 'darkorange',...
+    Set1 = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff3...
+    Set2 = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92...
+    Set3 = ['#8dd3c7', '#ffffb3', '#bebada', '#fb8072', '#80b1d3', '#fdb46...
+    Sets1to3 = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#f...
+    annotations = _Feature((3, 7, 0, 'beta', 1), (3, 11, 0, 'alpha', 0), 1...
+    color_lookup = {'aliceblue': '#F0F8FF', 'antiquewhite': '#FAEBD7', 'aq...
+    inferno = [(0, 0, 3), (0, 0, 4), (0, 0, 6), (1, 0, 7), (1, 1, 9), (1, ...
+    viridis = [(68, 1, 84), (68, 2, 85), (69, 3, 87), (69, 5, 88), (69, 6,...
+
+FILE
+    /home/chahak/.local/share/virtualenvs/chahak13.github.io-6_wF4i83/lib/python3.10/site-packages/datashader/colors.py
+#+end_example

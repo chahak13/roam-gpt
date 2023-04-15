@@ -1,0 +1,14 @@
+:PROPERTIES:
+:ID:       89f6cafa-b868-4e66-b27f-cee4db5f0f73
+:END:
+#+title: autoreload with ipython
+Ref: https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html
+
+Start =autoreload= with =ipython= to automatically reload imported modules. This makes working in =ipython= while changing source code easier as you don't have to restart kernels every time or reload using =importlib= everytime there is a change in the source code.
+
+#+begin_src jupyter-python
+%load_ext autoreload
+%autoreload 2
+#+end_src
+
+This method has its caveats and should be used carefully.

@@ -1,0 +1,105 @@
+:PROPERTIES:
+:ID:       959c4be8-5f5a-4309-a4a6-7ef5cdd34771
+:END:
+#+title: Does plt.scatter work with masked offsets?
+#+property: header-args :session /home/chahak/.local/share/jupyter/runtime/kernel-19830bfa-5b84-4e67-9b66-42c396dc036a.json :async yes :eval no-export :exports both :tangle yes
+
+There are 2 things that I want to check mainly:
+1. Does ~scatter~ work fine with masked arrays as input?
+2. Does ~scatter~ work if I reset the coordinates using ~set_offsets~ with masked arrays?
+
+  [[id:89f6cafa-b868-4e66-b27f-cee4db5f0f73][autoreload with ipython]] 
+   #+begin_src jupyter-python
+%load_ext autoreload
+%autoreload 3
+   #+end_src
+
+   #+RESULTS:
+
+   #+begin_src jupyter-python
+import numpy as np
+import matplotlib.pyplot as plt
+   #+end_src
+
+   #+RESULTS:
+
+* Masked arrays as input
+This test uses numpy masked arrays as direct inputs to ~scatter~.
+
+#+begin_src jupyter-python :results file :file ../assets/masked_scatter_input.png
+x = np.ma.array([1, 2, 3, 4, 5], mask=[0, 0, 1, 1, 0])
+y = np.ma.array([1, 2, 3, 4, 5])
+
+plt.scatter(x, y)
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+: <matplotlib.collections.PathCollection at 0x7f94ada19f90>
+[[file:../assets/masked_scatter_input.png]]
+:END:
+
+As in the figure, the mask on ~x~ does work fine. So ~scatter~ does indeed support masked arrays.
+* Masked arrays in ~set_offsets~
+Now, instead if masked arrays were passed in ~set_offsets~ to change the offsets for ~scatter~, I suspect that it won't work. To check this, we first plot using the masked data as above.
+
+#+begin_src jupyter-python :results file :file ../assets/masked_scatter_input_2.png
+x = np.ma.array([1, 2, 3, 4, 5], mask=[0, 0, 1, 1, 0])
+y = np.arange(1, 6)
+
+fig, ax = plt.subplots()
+scat = ax.scatter(x, y)
+#+end_src
+
+#+RESULTS:
+[[file:../assets/masked_scatter_input_2.png]]
+
+Now, if we update the ~x~ data and plot it again, it should still show only the 3 points it showed before.
+
+#+begin_src jupyter-python
+x += 1
+print(f"Updated x: {x}")
+scat.set_offsets(np.ma.column_stack([x, y]))
+print(scat.get_offsets())
+#+end_src
+
+#+RESULTS:
+: Updated x: [2 3 -- -- 6]
+: [[2. 1.]
+:  [3. 2.]
+:  [3. 3.]
+:  [4. 4.]
+:  [6. 5.]]
+
+As we see, the new offsets set by ~set_offsets~ doesn't have the mask information from the original input and will plot all the points instead of plotting only 3 points.
+* Bug fix
+This bug would have a simple fix. In =/lib/matplotlib/collections.py= the following patch should add support for masked array in offsets.
+
+#+begin_src diff python
+@@ -545,9 +545,9 @@ class Collection(artist.Artist, cm.ScalarMappable):
+         offsets = np.asanyarray(offsets)
+         if offsets.shape == (2,):  # Broadcast (2,) -> (1, 2) but nothing else.
+             offsets = offsets[None, :]
+-        self._offsets = np.column_stack(
+-            (np.asarray(self.convert_xunits(offsets[:, 0]), float),
+-             np.asarray(self.convert_yunits(offsets[:, 1]), float)))
++        self._offsets = np.ma.column_stack(
++            (np.asanyarray(self.convert_xunits(offsets[:, 0]), float),
++             np.asanyarray(self.convert_yunits(offsets[:, 1]), float)))
+         self.stale = True
+#+end_src
+** Test for bug fix
+A simple test for this would be to check if the newly set offsets array is masked or not.
+
+#+caption: /lib/matplotlib/testing/test_collections.py
+#+begin_src jupyter-python
+def test_masked_set_offsets():
+    x = np.ma.array([1, 2, 3, 4, 5], mask=[0, 0, 1, 1, 0])
+    y = np.arange(1, 6)
+
+    fig, ax = plt.subplots()
+    scat = ax.scatter(x, y)
+    x += 1
+    scat.set_offsets(np.ma.column_stack([x, y]))
+    assert np.ma.is_masked(scat.get_offsets())
+#+end_src

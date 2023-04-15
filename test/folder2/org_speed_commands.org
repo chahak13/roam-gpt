@@ -1,0 +1,69 @@
+:PROPERTIES:
+:ID:       aa7be101-d403-4bff-af1e-76c90528e54e
+:END:
+#+title: Org speed commands
+#+date: 2021-11-18
+
+
+#+begin_example emacs-lisp
+(("Outline Navigation")
+ ("n" org-speed-move-safe 'org-next-visible-heading)
+ ("p" org-speed-move-safe 'org-previous-visible-heading)
+ ("f" org-speed-move-safe 'org-forward-heading-same-level)
+ ("b" org-speed-move-safe 'org-backward-heading-same-level)
+ ("F" . org-next-block)
+ ("B" . org-previous-block)
+ ("u" org-speed-move-safe 'outline-up-heading)
+ ("j" . org-goto)
+ ("g" org-refile
+  '(4))
+ ("Outline Visibility")
+ ("c" . org-cycle)
+ ("C" . org-shifttab)
+ (" " . org-display-outline-path)
+ ("s" . org-toggle-narrow-to-subtree)
+ ("k" . org-cut-subtree)
+ ("=" . org-columns)
+ ("Outline Structure Editing")
+ ("U" . org-metaup)
+ ("D" . org-metadown)
+ ("r" . org-metaright)
+ ("l" . org-metaleft)
+ ("R" . org-shiftmetaright)
+ ("L" . org-shiftmetaleft)
+ ("i" progn
+  (forward-char 1)
+  (call-interactively 'org-insert-heading-respect-content))
+ ("^" . org-sort)
+ ("w" . org-refile)
+ ("a" . org-archive-subtree-default-with-confirmation)
+ ("@" . org-mark-subtree)
+ ("#" . org-toggle-comment)
+ ("Clock Commands")
+ ("I" . org-clock-in)
+ ("O" . org-clock-out)
+ ("Meta Data Editing")
+ ("t" . org-todo)
+ ("," org-priority)
+ ("0" org-priority 32)
+ ("1" org-priority 65)
+ ("2" org-priority 66)
+ ("3" org-priority 67)
+ (":" . org-set-tags-command)
+ ("e" . org-set-effort)
+ ("E" . org-inc-effort)
+ ("W" lambda
+  (m)
+  (interactive "sMinutes before warning: ")
+  (org-entry-put
+   (point)
+   "APPT_WARNTIME" m))
+ ("Agenda Views etc")
+ ("v" . org-agenda)
+ ("/" . org-sparse-tree)
+ ("Misc")
+ ("o" . org-open-at-point)
+ ("?" . org-speed-command-help)
+ ("<" org-agenda-set-restriction-lock 'subtree)
+ (">" org-agenda-remove-restriction-lock))
+#+end_example

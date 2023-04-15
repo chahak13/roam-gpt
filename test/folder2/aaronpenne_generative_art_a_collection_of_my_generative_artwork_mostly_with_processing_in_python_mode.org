@@ -1,0 +1,7 @@
+:PROPERTIES:
+:ID:       5ebe4f2e-e49b-4096-86cd-60f9eb644923
+:ROAM_REFS: https://github.com/aaronpenne/generative_art
+:END:
+#+TITLE: aaronpenne/generative_art: A collection of my generative artwork, mostly with Processing in Python mode
+#+filetags: generative_art
+//

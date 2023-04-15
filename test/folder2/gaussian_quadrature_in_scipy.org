@@ -1,0 +1,170 @@
+:PROPERTIES:
+:ID:       e5a410ae-6c1f-49b1-b191-8ae17ed5373c
+:END:
+#+TITLE: Gaussian quadrature in scipy
+#+DATE: 2021-07-14
+#+property: header-args :session quad :async yes :eval no-export
+#+filetags: python maths
+
+Scipy has an gaussian quadrature integration built-in in the =integrate= module as the =integrate.quadrature= function.
+
+#+begin_src jupyter-python :results raw drawer
+import numpy as np
+from scipy import integrate
+#+end_src
+
+#+RESULTS:
+:results:
+:end:
+
+A simple example of quadrature integration can be seen as follows, where we integrate the simple function \(f(x) = 2x\) from limits 0 to 2.
+
+#+begin_src jupyter-python :results raw drawer
+f = lambda x: 2*x
+
+print("Quadrature integration:", integrate.quadrature(f, 0, 2))
+print("Analytical solution:", 2**2)
+#+end_src
+
+#+RESULTS:
+:results:
+: Quadrature integration: (4.0, 0.0)
+: Analytical solution: 4
+:end:
+
+A more complex function can also be passed to the =quadrature= function.
+
+#+begin_src jupyter-python :results raw drawer
+def func(x):
+    return x**2 + 2*x + 3
+
+a = 2
+print("Quadrature integration:", integrate.quadrature(func, 0, 2))
+print("Analytical solution:", a**3/3 + a**2 + 3*a)
+#+end_src
+
+#+RESULTS:
+:results:
+: Quadrature integration: (12.666666666666664, 3.552713678800501e-15)
+: Analytical solution: 12.666666666666666
+:end:
+
+Now, to take into consideration functions that are dependent on more than just the integrating variable.
+
+#+begin_src jupyter-python :results raw drawer
+def func_2(t, z):
+    return z*t + z**2 + 2*t
+
+a = 2
+z = 2
+print("Quadrature integration:", integrate.quadrature(func_2, 0, 2, args=(z,)))
+print("Analytical solution:", z*a**2/2 + a*z**2 + a**2)
+#+end_src
+
+#+RESULTS:
+:results:
+: Quadrature integration: (16.0, 0.0)
+: Analytical solution: 16.0
+:end:
+
+If the function to integrate depends on more variables and even other functions, then we can pass those functions as parameters to the integrating function and solve the quadrature integration.
+
+#+begin_src jupyter-python :results raw drawer
+def func_3(t, z, f1, f2):
+    return f1(t) + z*t + f2(t)**2
+
+f1 = lambda x: x**2
+f2 = lambda x: x**3
+
+a, z = 2, 2
+print("Quadrature integration:", integrate.quadrature(func_3, 0, 2, args=(z, f1, f2)))
+print("Analytical solution:", a**3/3 + z*a**2/2 + a**7/7)
+#+end_src
+
+#+RESULTS:
+:results:
+: Quadrature integration: (24.952380952380942, 3.552713678800501e-15)
+: Analytical solution: 24.95238095238095
+:end:
+
+Functions with vector output need to provide the =vec_func= argument as =True=.
+
+#+begin_src jupyter-python :results raw drawer
+def f(x):
+    # print("x:", x)
+    # print("z:", z)
+    return z*x*2
+
+z = np.array([2, 3])
+integrate.quad_vec(f, 0, 2)
+#+end_src
+
+#+RESULTS:
+:results:
+| array | ((8 12)) | 4.803559250984065e-13 |
+:end:
+
+For fixed order Gaussian quadrature integration
+
+#+begin_src jupyter-python :results raw drawer
+f = lambda x, a: np.sin(np.kron(a, x)).reshape(-1, x.shape[0])
+x = np.array([1,2,3])
+a = np.array([1,2])
+print(f(x, a).shape)
+#+end_src
+
+#+RESULTS:
+:results:
+: (2, 3)
+:end:
+:end:
+
+#+begin_src jupyter-python :results raw drawer
+np.kron(a, x)
+#+end_src
+
+#+RESULTS:
+: array([1, 2, 3, 2, 4, 6])
+:results:
+:end:
+
+Writing gaussian quadrature integration from scratch using numpy
+
+#+begin_src jupyter-python :results raw drawer
+def norm_pdf(x, mu, sigma):
+    mu, sigma = mu.reshape(-1, 1), sigma.reshape(-1, 1)
+    x = x.reshape(-1, 1)
+    variance = sigma**2
+    numerator = x - mu
+    denominator = 2 * variance
+    pdf = ((1/(np.sqrt(2 * np.pi) * sigma)) * np.exp(-(numerator**2) / denominator))
+    return pdf
+
+#+end_src
+
+#+RESULTS:
+:results:
+:end:
+
+#+begin_src jupyter-python :results raw drawer
+def h_z(a, b, T_i, x, y, sigma_m2, delta_a, delta_b, indicator, n_time_samples=1000):
+    mc_sum = np.zeros(x.shape)
+    t = rng.uniform(0, T_i, size=n_time_samples)
+    alpha = t/T_i
+    mu_x = a.x + alpha * (b.x - a.x)
+    mu_y = a.y + alpha * (b.y - a.y)
+    sigma = np.sqrt(t * (1 - alpha) * sigma_m2
+                    + (1 - alpha)**2 * (delta_a**2)
+                    + (alpha**2) * (delta_b**2))
+    
+    pdf_x = norm_pdf(x, mu_x, sigma)
+    pdf_y = norm_pdf(y, mu_y, sigma)
+    mc_sum += indicator * pdf_x * pdf_y
+
+    return mc_sum
+#+end_src
+
+#+RESULTS:
+:results:
+:end:
+

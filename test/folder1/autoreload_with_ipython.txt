@@ -1,0 +1,27 @@
+                       ━━━━━━━━━━━━━━━━━━━━━━━━━
+                        AUTORELOAD WITH IPYTHON
+
+                              Chahak Mehta
+                       ━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+Table of Contents
+─────────────────
+
+
+
+
+Ref:
+<https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>
+
+Start `autoreload' with `ipython' to automatically reload imported
+modules. This makes working in `ipython' while changing source code
+easier as you don’t have to restart kernels every time or reload using
+`importlib' everytime there is a change in the source code.
+
+┌────
+│ %load_ext autoreload
+│ %autoreload 2
+└────
+
+This method has its caveats and should be used carefully.

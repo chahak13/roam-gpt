@@ -1,0 +1,50 @@
+:PROPERTIES:
+:ID:       59bc2f71-53cf-452a-9837-9b38a805bcbb
+:END:
+#+TITLE: emacs-jupyter and inline images in org-mode
+#+PROPERTY: header-args :session jp :exports both :eval no-export
+#+filetags: emacs org_mode python
+
+=emacs-jupyter= is an emacs interface for jupyter kernels. It can be installed using
+#+begin_src emacs-lisp :exports code
+(use-package jupyter
+  :straight t)
+#+end_src
+
+If =ob-async= is installed, then =jupyter-python= needs to be added to the list of languages that are not run asychronously. (Refer [[https://github.com/astahlman/ob-async/pull/71][this issue]]). This can be done by
+
+#+begin_src emacs-lisp :exports code
+(setq ob-async-no-async-languages-alist '("jupyter-python"))
+#+end_src
+
+An example python block:
+
+#+begin_src jupyter-python :results drawer
+print("ab")
+#+end_src
+
+#+RESULTS:
+: ab
+
+* emacs-jupyter works doesn't work in server
+
+When I first installed =emacs-jupyter= I found a weird situation where I could not run jupyter code blocks in org-mode if emacs was started as a daemon. On the other hand, if it was started separately as a window, everything ran fine. The issue was that I was adding =/home/boticelli/.local/bin/= (path to jupyter executable) to =exec-path= at the end of the config files. When opening emacs from a terminal as an independent session, it was considering this added path somehow, maybe by inheriting it from the shell itself, but it was. I moved that line to near the beginning of the =init.el= file itself and this seemed to solve the issue. This issue was very similar to the [[id:4b02b261-cca6-4cae-8fc4-02201dbafebf][Pipenv in emacs]] issue that I had recently.
+
+* Why emacs-jupyter
+
+Running python code in normal org-mode source block is nice and easy. But using them to plot images was a bit painful/difficult. Since =emacs-jupyter= uses =ipython= kernel, it allows some magic commands like =%matplotlib inline= etc to make this easier. It also gives =%timeit= which is really useful.
+
+Now, with =emacs-jupyter=, I can do imports like this and make plotting easier for myself.
+
+#+begin_src jupyter-python :results file :file ./images/normal_dist.png
+%matplotlib inline
+import numpy as np
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots()
+ax.hist(np.random.default_rng().normal(0, 1, 50000), bins=100);
+#+end_src
+
+#+RESULTS:
+[[file:./images/normal_dist.png]]
+

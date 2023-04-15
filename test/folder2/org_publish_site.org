@@ -1,0 +1,52 @@
+:PROPERTIES:
+:ID:       4d227e19-3405-4644-893b-188f2fcc8129
+:END:
+#+title: Org publish site
+#+date: 2021-12-09
+#+property: header-args :eval no-export
+
+=org-publish-project-alist= is the main variable to configure to set up the publishing of projects. It can be configured as a well formed property list with alternating keys and values.
+
+This can be used to publish the org-roam entries.
+
+#+begin_example emacs-lisp
+(setq org-publish-project-alist
+      '(("hugo"
+         :base-directory "~/Documents/org/roam/org/"
+         :publishing-directory "~/Documents/chahak13.github.io/"
+         :section-numbers nil
+         :table-of-contents nil
+         :publishing-function org-hugo-export-to-md
+         :base-extension "org"
+         )))
+
+#+end_example
+
+#+begin_src emacs-lisp
+(defvar blog-src-dir "/Users/cmehta/Dropbox/Mac/Documents/org/roam/org")
+(setq org-hugo-base-dir "/Users/cmehta/Documents/chahak13.github.io/")
+(defun cm/publish-blog ()
+  "Export all org file entries to hugo markdown in the blog content dir."
+  (interactive)
+  (setq blog-posts (directory-files blog-src-dir t "\.org$"))
+  (dolist (file blog-posts)
+    (org-hugo--export-file-to-md file t)
+    ;; (print file)
+    ))
+
+(cm/publish-blog)
+#+end_src
+
+#+RESULTS:
+
+Publishing single file using =ox-hugo=.
+
+#+begin_src emacs-lisp
+(require 'find-lisp)
+(with-current-buffer (find-file-noselect (expand-file-name "moonlander-notes.org" blog-src-dir))
+  (setq org-agenda-text-search-extra-files (find-lisp-find-files blog-src-dir "\.org$"))
+  (org-hugo-export-wim-to-md))
+#+end_src
+
+#+RESULTS:
+: /Users/cmehta/Dropbox/Mac/Documents/chahak13.github.io/content/posts/moonlander-notes.md

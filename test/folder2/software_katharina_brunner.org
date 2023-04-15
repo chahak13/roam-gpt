@@ -1,0 +1,8 @@
+:PROPERTIES:
+:ID:       daafee45-3aa2-4066-9e08-31b91dce48b8
+:ROAM_REFS: https://katharinabrunner.de/software-portfolio/
+:END:
+#+TITLE: Generative Art – Katharina Brunner
+#+filetags: generative_art
+
+This covers a blog and a github repo that looks at generative art made using R.

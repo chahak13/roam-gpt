@@ -1,0 +1,113 @@
+:PROPERTIES:
+:ID:       33711692-d8bd-4695-b1f0-5c354e474b6a
+:END:
+#+TITLE: Mail in emacs - mu4e
+#+DATE: 2021-05-30
+#+filetags: emacs
+#+property: header-args :eval no-export
+
+#+begin_quote
+   mu4e (mu-for-emacs) is an e-mail client for GNU Emacs version 24.4 or
+higher, built on top of the mu(1) e-mail search engine.  mu4e is
+optimized for quickly processing large amounts of e-mail.
+#+end_quote
+
+As taken from the manual, mu4e is an email interface for emacs. It is strictly an interface and doesn't communicate with the email provider for getting mails. This part is delegated to other things like =mbsync=, =offlineimap= etc. I use [[id:96244a3a-d9f5-4570-b9d4-d4faa62b8eb1][Fetching emails - mbsync]] for getting my mail periodically from gmail.
+
+* Installation
+mu4e comes along with the =mu= utility that can be downloaded directly from the OS's package manager. For Arch, this can be done via the AUR
+#+begin_src shell
+paru -S mu
+#+end_src
+This installs the =mu= indexer and its mu4e interface for emacs.
+
+* Configuration
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle ~/.emacs.d/config/cm-16-mu4e.el
+:END:
+First thing to use mu4e is to load it into emacs. Since mu4e is installed via the package manager, it needs to be loaded into emacs. This can be done via the =load-path= directive in use-package.
+
+#+begin_src emacs-lisp
+(use-package mu4e
+  :load-path "/usr/share/emacs/site-lisp/mu4e")
+#+end_src
+
+This will load mu4e into emacs. We now need to configure mu4e to look at the right paths for loading all the emails. The first variable that we need to set is the mail directory where mu4e will look for mails.
+
+#+begin_src emacs-lisp
+(setq mu4e-maildir "~/Mail")
+#+end_src
+
+Now that mu4e knows where to look for all emails, we can start configuring other variables for our liking.
+
+** Retrieval and indexing mails
+An important thing to note is that mu4e doesn't retrieve emails from the provider itself but it can call other utilities periodically to do so. This can be done by setting the following to variables.
+
+#+begin_src emacs-lisp
+(setq mu4e-get-mail-command "mbsync -a")
+(setq mu4e-update-interval (* 10 60))
+#+end_src
+
+Using these variables, mu4e uses the shell command set in the =mu4e-get-mail-command= variable every =mu4e-update-interval= seconds, which is set to 10 mins here. This can be changed as per requirement. To improve the indexing performace, I set the the =mu4e-index-lazy-check= variable to =t=. This variable tells the mu indexer to not update index for directories whose last modified time is not after the previous indexing. While this doesn't take into consideration changing/updating of messages, it handles addition and removal of messages. Since most of my operations don't involve changing emails in place, I'm going to try and use this to see how it affects my flow.
+
+#+begin_src emacs-lisp
+(setq mu4e-index-lazy-check t)
+#+end_src
+
+** Contexts
+Contexts provide the useful ability to switch between various email accounts, based on the right context, or manually. Using this, we can dynamically switch between folders of different email accounts. An =mu4e-context= is a Lisp object with a few useful members:
++ =name=: The name of the context. e.g. work or private
++ =vars=: An association-list of variable settings for this account.
++ =match-func=: A function that takes a MSG message plist as argument and returns non-nil if this context matches the situation. mu4e uses the first context that matches.
+
+We can use these variables to set contexts in mu4e as follows:
+
+#+begin_src emacs-lisp
+(setq mu4e-contexts
+      (list
+       (make-mu4e-context
+	   :name "Private"
+	   :match-func (lambda (msg)
+			 (when msg
+			   (string-prefix-p "/chahakcr7" (mu4e-message-field msg :maildir))))
+	   :vars
+	   '(
+	     (user-mail-address . "chahakcr7@gmail.com")
+	     (user-full-name . "Chahak")
+	     (mu4e-drafts-folder . "/chahakcr7/[Gmail]/Drafts")
+	     (mu4e-sent-folder . "/chahakcr7/[Gmail]/Sent Mail")
+	     (mu4e-refile-folder . "/chahakcr7/[Gmail]/All Mail")
+	     (mu4e-trash-folder . "/chahakcr7/[Gmail]/Trash")
+	     ))
+       ;; Official Email
+       (make-mu4e-context
+	:name "Official"
+	:match-func (lambda (msg)
+		      (when msg
+			(string-prefix-p "/chahakmehta013" (mu4e-message-field msg :maildir))))
+	:vars
+	'(
+	  (user-mail-address . "chahak.mehta013@gmail.com")
+	  (user-full-name . "Chahak Mehta")
+	  (mu4e-drafts-folder . "/chahakmehta013/[Gmail]/Drafts")
+	  (mu4e-sent-folder . "/chahakmehta013/[Gmail]/Sent Mail")
+	  (mu4e-refile-folder . "/chahakmehta013/[Gmail]/All Mail")
+	  (mu4e-trash-folder . "/chahakmehta013/[Gmail]/Trash")
+	  ))
+
+       ;; UT Austin email
+       (make-mu4e-context
+	:name "UT Austin"
+	:match-func (lambda (msg)
+		      (when msg
+			(string-prefix-p "/chahakut" (mu4e-message-field msg :maildir))))
+	:vars
+	'(
+	  (user-mail-address . "chahak@utexas.edu")
+	  (user-full-name . "Chahak Mehta")
+	  (mu4e-drafts-folder . "/chahakut/[Gmail]/Drafts")
+	  (mu4e-sent-folder . "/chahakut/[Gmail]/Sent Mail")
+	  (mu4e-refile-folder . "/chahakut/[Gmail]/All Mail")
+	  (mu4e-trash-folder . "/chahakut/[Gmail]/Trash")
+	  ))))
+#+end_src

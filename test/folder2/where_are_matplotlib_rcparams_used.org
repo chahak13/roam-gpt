@@ -1,0 +1,1575 @@
+:PROPERTIES:
+:ID:       9652f68b-e312-40a4-b3d0-71ef0fda850c
+:END:
+#+title: Where are Matplotlib rcParams used?
+#+property: header-args :session rcp :async yes :eval no-export :exports both
+
+Matplotlib has a =matplotlibrc= file that sets up many different values that in
+one way or other affect the usage of the library. This note tries to document
+which ~rcParams~ value is used where in matplotlib. While the comments are
+useful, they don't always list the secondary effects of setting some values (ex.
+~linewidth~). This should hopefully address that too.
+
+
+#+begin_src jupyter-python
+with open("/home/chahak/Documents/matplotlib/lib/matplotlib/mpl-data/matplotlibrc", "r") as f:
+    rclines = f.readlines()
+
+print(len(rclines))
+#+end_src
+
+#+RESULTS:
+: 788
+
+#+begin_src jupyter-python
+import os
+
+def generate_table(lines):
+    params = {}
+    for line in lines:
+        if line.startswith("## * "):
+            # print(f"\n{line[3:-2].strip()}")
+            topic = line[4:-2].strip()
+            params[topic] = []
+        elif not line[1:].strip().startswith("#") and line[1:] != "":
+            tup = line[1:].split(":")
+            if len(tup) > 1:
+                # print(f"| {tup[0]} | |")
+                params[topic].append(tup[0])
+    return params
+
+params = generate_table(rclines)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src jupyter-python :results raw
+from ripgrepy import Ripgrepy
+from pprint import pprint
+
+param_files = {}
+for topic, keys in params.items():
+    # print(f"* {topic}")
+    param_files[topic] = {}
+    for key in keys:
+        rg = Ripgrepy(
+            # f"rcParams\[['\"]{key}['\"]\]",
+            f"['\"]{key}['\"]",
+            "/home/chahak/Documents/matplotlib/lib/",
+        )
+        results = rg.with_filename().line_number().json().run().as_dict
+        key_files = sorted(
+            [
+                {
+                    "file": x["data"]["path"]["text"],
+                    "line_number": x["data"]["line_number"],
+                }
+                for x in results
+            ],
+            key=lambda x: x["file"]
+        )
+        # print(f"| {key} | {key_files} |")
+        param_files[topic][key] = key_files
+#+end_src
+
+#+RESULTS:
+
+#+begin_src jupyter-python
+# for topic, keys in param_files.items():
+#     print(f"* {topic}")
+#     for key, val in keys.items():
+#         st = ", ".join([f"{x['file']}:{x['line_number']}" for x in val])
+#         print(f"| {key} | {st[:70]} |")
+#         if len(st) >= 70:
+#             for i in range(len(st)//70):
+#                 print(f"| | {st[70 * (i+1): 70 * (i + 2)]} |")
+#+end_src
+
+
+#+begin_src jupyter-python
+import ast
+
+def find_function_name(filepath, lineno):
+    with open(filepath, 'r') as f:
+        lines = f.read()
+        root = ast.parse(lines)
+        functions = [n for n in root.body if isinstance(n, ast.FunctionDef)]
+        for fn in functions:
+            if fn.lineno <= lineno <= fn.end_lineno:
+                return fn.name
+        classes = [n for n in root.body if isinstance(n, ast.ClassDef)]
+        for cls in classes:
+            methods = [n for n in cls.body if isinstance(n, ast.FunctionDef)]
+            for method in methods:
+                if method.lineno <= lineno <= method.end_lineno:
+                    return f"{cls.name}.{method.name}"
+    return None
+
+filepath = "/home/chahak/Documents/matplotlib/lib/matplotlib/__init__.py"
+line_number = 701
+function_name = find_function_name(filepath, line_number)
+print(function_name)
+#+end_src
+
+#+RESULTS:
+: RcParams._set
+
+#+begin_src jupyter-python
+from tqdm import tqdm
+
+param_fnames = {}
+for topic, keyinfo in tqdm(param_files.items()):
+    param_fnames[topic] = {}
+    for key, data in keyinfo.items():
+        param_fnames[topic][key] = {
+            f"{x['file'].split('matplotlib', maxsplit=1)[-1]}:{x['line_number']}": find_function_name(
+                x["file"], x["line_number"]
+            )
+            for x in data
+        }
+#+end_src
+
+#+RESULTS:
+: 100% 25/25 [00:31<00:00,  1.26s/it]
+:
+
+#+begin_src jupyter-python
+from pprint import pprint
+
+for topic, keyinfo in param_fnames.items():
+    print(f"\n* {topic}\n")
+    for key, data in keyinfo.items():
+        files, functions = list(data.keys()), list(data.values())
+        if len(files) > 0:
+            print(f"| ~{key}~ | ~{files[0]}~ | ~{functions[0]}~ |")
+            if len(files) > 1:
+                for i in range(1, len(files)):
+                    print(f"| | ~{files[i]}~ | ~{functions[i]}~ |")
+        else:
+            print(f"| ~{key}~ | | |")
+#+end_src
+
+#+RESULTS:
+* BACKENDS
+
+| ~webagg.port~              | ~/lib/matplotlib/backends/backend_webagg.py:245~         | ~WebAggApplication.initialize~    |
+|                            | ~/lib/matplotlib/rcsetup.py:821~                         | ~None~                            |
+|                            | ~/lib/matplotlib/style/core.py:42~                       | ~None~                            |
+|                            | ~/lib/matplotlib/tests/test_backends_interactive.py:405~ | ~test_webagg~                     |
+| ~webagg.address~           | ~/lib/matplotlib/backends/backend_webagg.py:242~         | ~WebAggApplication.initialize~    |
+|                            | ~/lib/matplotlib/rcsetup.py:822~                         | ~None~                            |
+|                            | ~/lib/matplotlib/style/core.py:42~                       | ~None~                            |
+|                            | ~/lib/matplotlib/tests/test_backends_interactive.py:405~ | ~test_webagg~                     |
+| ~webagg.port_retries~      | ~/lib/matplotlib/backends/backend_webagg.py:247~         | ~WebAggApplication.initialize~    |
+|                            | ~/lib/matplotlib/rcsetup.py:824~                         | ~None~                            |
+|                            | ~/lib/matplotlib/style/core.py:43~                       | ~None~                            |
+|                            | ~/lib/matplotlib/tests/test_backends_interactive.py:113~ | ~_test_interactive_impl~          |
+|                            | ~/lib/matplotlib/tests/test_backends_interactive.py:222~ | ~_test_thread_impl~               |
+| ~webagg.open_in_browser~   | ~/lib/matplotlib/backends/backend_webagg.py:64~          | ~FigureManagerWebAgg.pyplot_show~ |
+|                            | ~/lib/matplotlib/rcsetup.py:823~                         | ~None~                            |
+|                            | ~/lib/matplotlib/style/core.py:43~                       | ~None~                            |
+|                            | ~/lib/matplotlib/tests/test_backends_interactive.py:112~ | ~_test_interactive_impl~          |
+|                            | ~/lib/matplotlib/tests/test_backends_interactive.py:221~ | ~_test_thread_impl~               |
+| ~default.backend_fallback~ | ~/lib/matplotlib/__init__.py:1340~                       | ~use~                             |
+|                            | ~/lib/matplotlib/pyplot.py:2380~                         | ~None~                            |
+|                            | ~/lib/matplotlib/rcsetup.py:815~                         | ~None~                            |
+|                            | ~/lib/matplotlib/style/core.py:43~                       | ~None~                            |
+| ~default.interactive~      | ~/lib/matplotlib/__init__.py:1362~                       | ~interactive~                     |
+|                            | ~/lib/matplotlib/__init__.py:1374~                       | ~is_interactive~                  |
+|                            | ~/lib/matplotlib/rcsetup.py:818~                         | ~None~                            |
+|                            | ~/lib/matplotlib/style/core.py:42~                       | ~None~                            |
+| ~figure.hooks~             | ~/lib/matplotlib/pyplot.py:906~                          | ~figure~                          |
+|                            | ~/lib/matplotlib/rcsetup.py:816~                         | ~None~                            |
+|                            | ~/lib/matplotlib/tests/test_pyplot.py:452~               | ~test_figure_hook~                |
+| ~default.toolbar~          | ~/lib/matplotlib/rcsetup.py:817~                         | ~None~                            |
+|                            | ~/lib/matplotlib/style/core.py:44~                       | ~None~                            |
+|                            | ~/lib/matplotlib/tests/test_widgets.py:1016~             | ~test_TextBox~                    |
+| ~default.timezone~         | ~/lib/matplotlib/rcsetup.py:819~                         | ~None~                            |
+|                            | ~/lib/matplotlib/style/core.py:44~                       | ~None~                            |
+
+* LINES
+
+| ~lines.linewidth~       | ~/lib/matplotlib/__init__.py:1076~                          | ~rc~                                        |
+|                         | ~/lib/matplotlib/__init__.py:1113~                          | ~rc~                                        |
+|                         | ~/lib/matplotlib/__init__.py:1248~                          | ~rc_context~                                |
+|                         | ~/lib/matplotlib/axes/_axes.py:4654~                        | ~Axes.scatter~                              |
+|                         | ~/lib/matplotlib/axes/_axes.py:4657~                        | ~Axes.scatter~                              |
+|                         | ~/lib/matplotlib/collections.py:1455~                       | ~LineCollection._get_default_linewidth~     |
+|                         | ~/lib/matplotlib/contour.py:1231~                           | ~ContourSet._process_linewidths~            |
+|                         | ~/lib/matplotlib/lines.py:329~                              | ~Line2D.__init__~                           |
+|                         | ~/lib/matplotlib/pyplot.py:725~                             | ~xkcd~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:827~                            | ~None~                                      |
+|                         | ~/lib/matplotlib/streamplot.py:106~                         | ~streamplot~                                |
+|                         | ~/lib/matplotlib/tests/test_axes.py:2705~                   | ~TestScatter.test_scatter_linewidths~       |
+|                         | ~/lib/matplotlib/tests/test_axes.py:2934~                   | ~_bxp_test_helper~                          |
+|                         | ~/lib/matplotlib/tests/test_axes.py:5284~                   | ~test_twin_spines_on_top~                   |
+|                         | ~/lib/matplotlib/tests/test_collections.py:1199~            | ~None~                                      |
+|                         | ~/lib/matplotlib/tests/test_contour.py:364~                 | ~test_contour_linewidth~                    |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:40~                 | ~test_rcparams~                             |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:52~                 | ~test_rcparams~                             |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:53~                 | ~test_rcparams~                             |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:56~                 | ~test_rcparams~                             |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:57~                 | ~test_rcparams~                             |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:58~                 | ~test_rcparams~                             |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:61~                 | ~test_rcparams~                             |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:63~                 | ~test_rcparams~                             |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:70~                 | ~test_rcparams~                             |
+|                         | ~/lib/matplotlib/tests/test_style.py:194~                   | ~test_style_from_module~                    |
+|                         | ~/lib/matplotlib/tests/test_style.py:196~                   | ~test_style_from_module~                    |
+|                         | ~/lib/matplotlib/tests/test_style.py:198~                   | ~test_style_from_module~                    |
+|                         | ~/lib/mpl_toolkits/mplot3d/axis3d.py:104~                   | ~Axis.__init__~                             |
+|                         | ~/lib/mpl_toolkits/mplot3d/axis3d.py:105~                   | ~Axis.__init__~                             |
+| ~lines.linestyle~       | ~/lib/matplotlib/axes/_axes.py:3019~                        | ~Axes.stem~                                 |
+|                         | ~/lib/matplotlib/axes/_base.py:202~                         | ~_process_plot_format~                      |
+|                         | ~/lib/matplotlib/lines.py:332~                              | ~Line2D.__init__~                           |
+|                         | ~/lib/matplotlib/rcsetup.py:828~                            | ~None~                                      |
+|                         | ~/lib/mpl_toolkits/mplot3d/axes3d.py:3285~                  | ~Axes3D.stem~                               |
+| ~lines.color~           | ~/lib/matplotlib/__init__.py:1077~                          | ~rc~                                        |
+|                         | ~/lib/matplotlib/collections.py:1461~                       | ~LineCollection._get_default_edgecolor~     |
+|                         | ~/lib/matplotlib/lines.py:336~                              | ~Line2D.__init__~                           |
+|                         | ~/lib/matplotlib/rcsetup.py:829~                            | ~None~                                      |
+|                         | ~/lib/matplotlib/tests/test_axes.py:4854~                   | ~test_vlines_default~                       |
+|                         | ~/lib/matplotlib/tests/test_axes.py:4901~                   | ~test_hlines_default~                       |
+| ~lines.marker~          | ~/lib/matplotlib/lines.py:334~                              | ~Line2D.__init__~                           |
+|                         | ~/lib/matplotlib/rcsetup.py:830~                            | ~None~                                      |
+|                         | ~/lib/matplotlib/tests/test_axes.py:782~                    | ~test_single_point~                         |
+|                         | ~/lib/matplotlib/tests/test_axes.py:3383~                   | ~test_boxplot_marker_behavior~              |
+|                         | ~/lib/matplotlib/tests/test_axes.py:3392~                   | ~test_boxplot_marker_behavior~              |
+| ~lines.markerfacecolor~ | ~/lib/matplotlib/rcsetup.py:831~                            | ~None~                                      |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:175~                | ~test_mfc_rcparams~                         |
+| ~lines.markeredgecolor~ | ~/lib/matplotlib/rcsetup.py:832~                            | ~None~                                      |
+|                         | ~/lib/matplotlib/tests/test_axes.py:7729~                   | ~test_xtickcolor_is_not_markercolor~        |
+|                         | ~/lib/matplotlib/tests/test_axes.py:7737~                   | ~test_ytickcolor_is_not_markercolor~        |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:181~                | ~test_mec_rcparams~                         |
+| ~lines.markeredgewidth~ | ~/lib/matplotlib/lines.py:1252~                             | ~Line2D.set_markeredgewidth~                |
+|                         | ~/lib/matplotlib/rcsetup.py:833~                            | ~None~                                      |
+|                         | ~/lib/matplotlib/tests/test_axes.py:226~                    | ~test_formatter_ticker~                     |
+| ~lines.markersize~      | ~/lib/matplotlib/axes/_axes.py:4455~                        | ~Axes.scatter~                              |
+|                         | ~/lib/matplotlib/axes/_axes.py:4577~                        | ~Axes.scatter~                              |
+|                         | ~/lib/matplotlib/collections.py:1090~                       | ~PathCollection.legend_elements~            |
+|                         | ~/lib/matplotlib/lines.py:339~                              | ~Line2D.__init__~                           |
+|                         | ~/lib/matplotlib/rcsetup.py:834~                            | ~None~                                      |
+|                         | ~/lib/matplotlib/tests/test_backend_pgf.py:119~             | ~test_rcupdate~                             |
+|                         | ~/lib/matplotlib/tests/test_backend_pgf.py:125~             | ~test_rcupdate~                             |
+|                         | ~/lib/mpl_toolkits/mplot3d/axes3d.py:3069~                  | ~Axes3D.errorbar~                           |
+| ~lines.dash_joinstyle~  | ~/lib/matplotlib/lines.py:345~                              | ~Line2D.__init__~                           |
+|                         | ~/lib/matplotlib/rcsetup.py:836~                            | ~None~                                      |
+| ~lines.dash_capstyle~   | ~/lib/matplotlib/lines.py:343~                              | ~Line2D.__init__~                           |
+|                         | ~/lib/matplotlib/rcsetup.py:838~                            | ~None~                                      |
+| ~lines.solid_joinstyle~ | ~/lib/matplotlib/lines.py:349~                              | ~Line2D.__init__~                           |
+|                         | ~/lib/matplotlib/rcsetup.py:837~                            | ~None~                                      |
+|                         | ~/lib/mpl_toolkits/axisartist/axis_artist.py:850~           | ~AxisArtist._init_line~                     |
+| ~lines.solid_capstyle~  | ~/lib/matplotlib/lines.py:347~                              | ~Line2D.__init__~                           |
+|                         | ~/lib/matplotlib/rcsetup.py:839~                            | ~None~                                      |
+|                         | ~/lib/mpl_toolkits/axisartist/axis_artist.py:849~           | ~AxisArtist._init_line~                     |
+| ~lines.antialiased~     | ~/lib/matplotlib/collections.py:1458~                       | ~LineCollection._get_default_antialiased~   |
+|                         | ~/lib/matplotlib/lines.py:341~                              | ~Line2D.__init__~                           |
+|                         | ~/lib/matplotlib/rcsetup.py:835~                            | ~None~                                      |
+| ~lines.dashed_pattern~  | ~/lib/matplotlib/rcsetup.py:840~                            | ~None~                                      |
+| ~lines.dashdot_pattern~ | ~/lib/matplotlib/rcsetup.py:841~                            | ~None~                                      |
+| ~lines.dotted_pattern~  | ~/lib/matplotlib/rcsetup.py:842~                            | ~None~                                      |
+| ~lines.scale_dashes~    | ~/lib/matplotlib/lines.py:76~                               | ~_scale_dashes~                             |
+|                         | ~/lib/matplotlib/rcsetup.py:843~                            | ~None~                                      |
+| ~markers.fillstyle~     | ~/lib/matplotlib/markers.py:293~                            | ~MarkerStyle._set_fillstyle~                |
+|                         | ~/lib/matplotlib/rcsetup.py:487~                            | ~None~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:846~                            | ~None~                                      |
+|                         | ~/lib/matplotlib/tests/test_axes.py:4673~                   | ~test_markers_fillstyle_rcparams~           |
+| ~pcolor.shading~        | ~/lib/matplotlib/axes/_axes.py:5937~                        | ~Axes.pcolor~                               |
+|                         | ~/lib/matplotlib/axes/_axes.py:6209~                        | ~Axes.pcolormesh~                           |
+|                         | ~/lib/matplotlib/rcsetup.py:849~                            | ~None~                                      |
+| ~pcolormesh.snap~       | ~/lib/matplotlib/axes/_axes.py:6217~                        | ~Axes.pcolormesh~                           |
+|                         | ~/lib/matplotlib/rcsetup.py:850~                            | ~None~                                      |
+|                         | ~/lib/matplotlib/tests/test_agg_filter.py:11~               | ~test_agg_filter_alpha~                     |
+|                         | ~/lib/matplotlib/tests/test_axes.py:926~                    | ~test_hexbin_log~                           |
+|                         | ~/lib/matplotlib/tests/test_axes.py:1226~                   | ~test_pcolormesh~                           |
+|                         | ~/lib/matplotlib/tests/test_axes.py:1272~                   | ~test_pcolormesh_alpha~                     |
+|                         | ~/lib/matplotlib/tests/test_axes.py:1317~                   | ~test_pcolormesh_datetime_axis~             |
+|                         | ~/lib/matplotlib/tests/test_axes.py:2392~                   | ~test_hist2d~                               |
+|                         | ~/lib/matplotlib/tests/test_axes.py:2410~                   | ~test_hist2d_transpose~                     |
+|                         | ~/lib/matplotlib/tests/test_colorbar.py:111~                | ~test_colorbar_extension_shape~             |
+|                         | ~/lib/matplotlib/tests/test_colorbar.py:124~                | ~test_colorbar_extension_length~            |
+|                         | ~/lib/matplotlib/tests/test_colorbar.py:165~                | ~test_colorbar_positioning~                 |
+|                         | ~/lib/matplotlib/tests/test_colorbar.py:332~                | ~test_colorbar_closed_patch~                |
+|                         | ~/lib/matplotlib/tests/test_colors.py:838~                  | ~test_cmap_and_norm_from_levels_and_colors~ |
+|                         | ~/lib/matplotlib/tests/test_colors.py:858~                  | ~test_boundarynorm_and_colorbarbase~        |
+|                         | ~/lib/matplotlib/tests/test_constrainedlayout.py:95~        | ~test_constrained_layout6~                  |
+|                         | ~/lib/matplotlib/tests/test_constrainedlayout.py:409~       | ~test_colorbar_location~                    |
+|                         | ~/lib/matplotlib/tests/test_contour.py:105~                 | ~test_given_colors_levels_and_extends~      |
+|                         | ~/lib/matplotlib/tests/test_contour.py:287~                 | ~test_contourf_log_extension~               |
+|                         | ~/lib/matplotlib/tests/test_contour.py:326~                 | ~test_contour_addlines~                     |
+|                         | ~/lib/matplotlib/tests/test_contour.py:343~                 | ~test_contour_uneven~                       |
+|                         | ~/lib/matplotlib/tests/test_image.py:826~                   | ~test_mask_image_over_under~                |
+|                         | ~/lib/mpl_toolkits/axes_grid1/tests/test_axes_grid1.py:703~ | ~test_imagegrid_cbar_mode_edge~             |
+|                         | ~/lib/mpl_toolkits/axisartist/tests/test_axislines.py:64~   | ~test_ParasiteAxesAuxTrans~                 |
+|                         | ~/lib/mpl_toolkits/mplot3d/tests/test_axes3d.py:557~        | ~test_surface3d~                            |
+
+* PATCHES
+
+| ~patch.linewidth~       | ~/lib/matplotlib/collections.py:567~         | ~Collection._get_default_linewidth~   |
+|                         | ~/lib/matplotlib/patches.py:391~             | ~Patch.set_linewidth~                 |
+|                         | ~/lib/matplotlib/rcsetup.py:853~             | ~None~                                |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:556~ | ~test_deprecation~                    |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:559~ | ~test_deprecation~                    |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:562~ | ~test_deprecation~                    |
+| ~patch.facecolor~       | ~/lib/matplotlib/axes/_axes.py:4129~         | ~Axes.bxp~                            |
+|                         | ~/lib/matplotlib/collections.py:732~         | ~Collection._get_default_facecolor~   |
+|                         | ~/lib/matplotlib/patches.py:343~             | ~Patch._set_facecolor~                |
+|                         | ~/lib/matplotlib/rcsetup.py:856~             | ~None~                                |
+| ~patch.edgecolor~       | ~/lib/matplotlib/collections.py:769~         | ~Collection._get_default_edgecolor~   |
+|                         | ~/lib/matplotlib/patches.py:320~             | ~Patch._set_edgecolor~                |
+|                         | ~/lib/matplotlib/rcsetup.py:854~             | ~None~                                |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:566~ | ~test_deprecation~                    |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:569~ | ~test_deprecation~                    |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:572~ | ~test_deprecation~                    |
+| ~patch.force_edgecolor~ | ~/lib/matplotlib/collections.py:774~         | ~Collection._set_edgecolor~           |
+|                         | ~/lib/matplotlib/patches.py:318~             | ~Patch._set_edgecolor~                |
+|                         | ~/lib/matplotlib/rcsetup.py:855~             | ~None~                                |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:576~ | ~test_deprecation~                    |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:579~ | ~test_deprecation~                    |
+| ~patch.antialiased~     | ~/lib/matplotlib/collections.py:712~         | ~Collection._get_default_antialiased~ |
+|                         | ~/lib/matplotlib/patches.py:311~             | ~Patch.set_antialiased~               |
+|                         | ~/lib/matplotlib/rcsetup.py:857~             | ~None~                                |
+|                         | ~/lib/matplotlib/tests/test_patches.py:823~  | ~test_default_antialiased~            |
+|                         | ~/lib/matplotlib/tests/test_patches.py:824~  | ~test_default_antialiased~            |
+|                         | ~/lib/matplotlib/tests/test_patches.py:827~  | ~test_default_antialiased~            |
+
+* HATCHES
+
+| ~hatch.color~     | ~/lib/matplotlib/backend_bases.py:774~         | ~GraphicsContextBase.__init__~ |
+|                   | ~/lib/matplotlib/collections.py:172~           | ~Collection.__init__~          |
+|                   | ~/lib/matplotlib/patches.py:74~                | ~Patch.__init__~               |
+|                   | ~/lib/matplotlib/rcsetup.py:860~               | ~None~                         |
+|                   | ~/lib/matplotlib/tests/test_patches.py:498~    | ~test_multi_color_hatch~       |
+| ~hatch.linewidth~ | ~/lib/matplotlib/backend_bases.py:775~         | ~GraphicsContextBase.__init__~ |
+|                   | ~/lib/matplotlib/backends/backend_pdf.py:1579~ | ~PdfFile.writeHatches~         |
+|                   | ~/lib/matplotlib/backends/backend_ps.py:359~   | ~RendererPS.create_hatch~      |
+|                   | ~/lib/matplotlib/backends/backend_svg.py:525~  | ~RendererSVG._write_hatches~   |
+|                   | ~/lib/matplotlib/rcsetup.py:861~               | ~None~                         |
+
+* BOXPLOT
+
+| ~boxplot.notch~                      | ~/lib/matplotlib/axes/_axes.py:3894~      | ~Axes.boxplot~                 |
+|                                      | ~/lib/matplotlib/rcsetup.py:867~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3270~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.vertical~                   | ~/lib/matplotlib/axes/_axes.py:3896~      | ~Axes.boxplot~                 |
+|                                      | ~/lib/matplotlib/rcsetup.py:868~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3296~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.whiskers~                   | ~/lib/matplotlib/axes/_axes.py:3887~      | ~Axes.boxplot~                 |
+|                                      | ~/lib/matplotlib/rcsetup.py:869~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3271~ | ~test_boxplot_rc_parameters~   |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3297~ | ~test_boxplot_rc_parameters~   |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3302~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.bootstrap~                  | ~/lib/matplotlib/axes/_axes.py:3889~      | ~Axes.boxplot~                 |
+|                                      | ~/lib/matplotlib/rcsetup.py:870~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3272~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.patchartist~                | ~/lib/matplotlib/axes/_axes.py:3898~      | ~Axes.boxplot~                 |
+|                                      | ~/lib/matplotlib/rcsetup.py:871~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3298~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.showmeans~                  | ~/lib/matplotlib/axes/_axes.py:3902~      | ~Axes.boxplot~                 |
+|                                      | ~/lib/matplotlib/rcsetup.py:872~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3306~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.showcaps~                   | ~/lib/matplotlib/axes/_axes.py:3904~      | ~Axes.boxplot~                 |
+|                                      | ~/lib/matplotlib/rcsetup.py:873~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3303~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.showbox~                    | ~/lib/matplotlib/axes/_axes.py:3906~      | ~Axes.boxplot~                 |
+|                                      | ~/lib/matplotlib/rcsetup.py:874~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3304~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.showfliers~                 | ~/lib/matplotlib/axes/_axes.py:3908~      | ~Axes.boxplot~                 |
+|                                      | ~/lib/matplotlib/rcsetup.py:875~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3305~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.meanline~                   | ~/lib/matplotlib/axes/_axes.py:3900~      | ~Axes.boxplot~                 |
+|                                      | ~/lib/matplotlib/rcsetup.py:876~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3307~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.flierprops.color~           | ~/lib/matplotlib/rcsetup.py:878~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3274~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.flierprops.marker~          | ~/lib/matplotlib/rcsetup.py:879~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3275~ | ~test_boxplot_rc_parameters~   |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3384~ | ~test_boxplot_marker_behavior~ |
+| ~boxplot.flierprops.markerfacecolor~ | ~/lib/matplotlib/rcsetup.py:880~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3276~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.flierprops.markeredgecolor~ | ~/lib/matplotlib/rcsetup.py:881~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3277~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.flierprops.markeredgewidth~ | ~/lib/matplotlib/rcsetup.py:882~          | ~None~                         |
+| ~boxplot.flierprops.markersize~      | ~/lib/matplotlib/rcsetup.py:883~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3278~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.flierprops.linestyle~       | ~/lib/matplotlib/rcsetup.py:884~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3279~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.flierprops.linewidth~       | ~/lib/matplotlib/rcsetup.py:885~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3280~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.boxprops.color~             | ~/lib/matplotlib/axes/_axes.py:4127~      | ~Axes.bxp~                     |
+|                                      | ~/lib/matplotlib/rcsetup.py:887~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3282~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.boxprops.linewidth~         | ~/lib/matplotlib/axes/_axes.py:4126~      | ~Axes.bxp~                     |
+|                                      | ~/lib/matplotlib/rcsetup.py:888~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:2933~ | ~_bxp_test_helper~             |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3283~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.boxprops.linestyle~         | ~/lib/matplotlib/axes/_axes.py:4125~      | ~Axes.bxp~                     |
+|                                      | ~/lib/matplotlib/rcsetup.py:889~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3284~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.whiskerprops.color~         | ~/lib/matplotlib/rcsetup.py:891~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3313~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.whiskerprops.linewidth~     | ~/lib/matplotlib/rcsetup.py:892~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3314~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.whiskerprops.linestyle~     | ~/lib/matplotlib/rcsetup.py:893~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3315~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.capprops.color~             | ~/lib/matplotlib/rcsetup.py:895~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3286~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.capprops.linewidth~         | ~/lib/matplotlib/rcsetup.py:896~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3287~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.capprops.linestyle~         | ~/lib/matplotlib/rcsetup.py:897~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3288~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.medianprops.color~          | ~/lib/matplotlib/rcsetup.py:899~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3290~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.medianprops.linewidth~      | ~/lib/matplotlib/rcsetup.py:900~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3291~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.medianprops.linestyle~      | ~/lib/matplotlib/rcsetup.py:901~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3292~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.meanprops.color~            | ~/lib/matplotlib/rcsetup.py:903~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3309~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.meanprops.marker~           | ~/lib/matplotlib/rcsetup.py:904~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3385~ | ~test_boxplot_marker_behavior~ |
+| ~boxplot.meanprops.markerfacecolor~  | ~/lib/matplotlib/rcsetup.py:905~          | ~None~                         |
+| ~boxplot.meanprops.markeredgecolor~  | ~/lib/matplotlib/rcsetup.py:906~          | ~None~                         |
+| ~boxplot.meanprops.markersize~       | ~/lib/matplotlib/rcsetup.py:907~          | ~None~                         |
+| ~boxplot.meanprops.linestyle~        | ~/lib/matplotlib/rcsetup.py:908~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3311~ | ~test_boxplot_rc_parameters~   |
+| ~boxplot.meanprops.linewidth~        | ~/lib/matplotlib/rcsetup.py:909~          | ~None~                         |
+|                                      | ~/lib/matplotlib/tests/test_axes.py:3310~ | ~test_boxplot_rc_parameters~   |
+
+* FONT
+
+| ~font.family~     | ~/lib/matplotlib/backends/backend_ps.py:587~               | ~RendererPS.draw_tex~                          |
+|                   | ~/lib/matplotlib/font_manager.py:728~                      | ~FontProperties.set_family~                    |
+|                   | ~/lib/matplotlib/pyplot.py:718~                            | ~xkcd~                                         |
+|                   | ~/lib/matplotlib/rcsetup.py:912~                           | ~None~                                         |
+|                   | ~/lib/matplotlib/testing/__init__.py:19~                   | ~set_font_settings_for_testing~                |
+|                   | ~/lib/matplotlib/tests/test_backend_pdf.py:28~             | ~test_use14corefonts~                          |
+|                   | ~/lib/matplotlib/tests/test_backend_pgf.py:80~             | ~test_xelatex~                                 |
+|                   | ~/lib/matplotlib/tests/test_backend_pgf.py:101~            | ~test_pdflatex~                                |
+|                   | ~/lib/matplotlib/tests/test_backend_pgf.py:116~            | ~test_rcupdate~                                |
+|                   | ~/lib/matplotlib/tests/test_backend_pgf.py:122~            | ~test_rcupdate~                                |
+|                   | ~/lib/matplotlib/tests/test_backend_pgf.py:148~            | ~test_pathclip~                                |
+|                   | ~/lib/matplotlib/tests/test_backend_pgf.py:167~            | ~test_mixedmode~                               |
+|                   | ~/lib/matplotlib/tests/test_backend_pgf.py:177~            | ~test_bbox_inches~                             |
+|                   | ~/lib/matplotlib/tests/test_backend_pgf.py:196~            | ~test_pdf_pages~                               |
+|                   | ~/lib/matplotlib/tests/test_backend_pgf.py:318~            | ~test_unknown_font~                            |
+|                   | ~/lib/matplotlib/tests/test_legend.py:1054~                | ~test_usetex_no_warn~                          |
+|                   | ~/lib/matplotlib/tests/test_mathtext.py:505~               | ~test_mathtext_cmr10_minus_sign~               |
+|                   | ~/lib/matplotlib/tests/test_rcparams.py:78~                | ~test_RcParams_class~                          |
+|                   | ~/lib/matplotlib/tests/test_rcparams.py:87~                | ~test_RcParams_class~                          |
+|                   | ~/lib/matplotlib/tests/test_rcparams.py:103~               | ~test_RcParams_class~                          |
+|                   | ~/lib/matplotlib/tests/test_texmanager.py:26~              | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_texmanager.py:28~              | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_texmanager.py:30~              | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_texmanager.py:32~              | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_texmanager.py:34~              | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_texmanager.py:35~              | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_texmanager.py:36~              | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_texmanager.py:38~              | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_ticker.py:761~                 | ~TestScalarFormatter.test_mathtext_ticks~      |
+|                   | ~/lib/matplotlib/tests/test_ticker.py:773~                 | ~TestScalarFormatter.test_cmr10_substitutions~ |
+|                   | ~/lib/matplotlib/texmanager.py:111~                        | ~TexManager._get_font_family_and_reduced~      |
+|                   | ~/lib/matplotlib/texmanager.py:131~                        | ~TexManager._get_font_preamble_and_command~    |
+|                   | ~/lib/matplotlib/ticker.py:550~                            | ~ScalarFormatter.set_useMathText~              |
+| ~font.style~      | ~/lib/matplotlib/font_manager.py:742~                      | ~FontProperties.set_style~                     |
+|                   | ~/lib/matplotlib/rcsetup.py:913~                           | ~None~                                         |
+| ~font.variant~    | ~/lib/matplotlib/font_manager.py:755~                      | ~FontProperties.set_variant~                   |
+|                   | ~/lib/matplotlib/rcsetup.py:914~                           | ~None~                                         |
+| ~font.weight~     | ~/lib/matplotlib/font_manager.py:771~                      | ~FontProperties.set_weight~                    |
+|                   | ~/lib/matplotlib/rcsetup.py:916~                           | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_rcparams.py:79~                | ~test_RcParams_class~                          |
+|                   | ~/lib/matplotlib/tests/test_rcparams.py:89~                | ~test_RcParams_class~                          |
+| ~font.stretch~    | ~/lib/matplotlib/backends/backend_svg.py:1143~             | ~RendererSVG._draw_text_as_text~               |
+|                   | ~/lib/matplotlib/backends/backend_svg.py:1215~             | ~RendererSVG._draw_text_as_text~               |
+|                   | ~/lib/matplotlib/font_manager.py:797~                      | ~FontProperties.set_stretch~                   |
+|                   | ~/lib/matplotlib/rcsetup.py:915~                           | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_backend_svg.py:223~            | ~test_svgnone_with_data_coordinates~           |
+| ~font.size~       | ~/lib/matplotlib/_tight_layout.py:51~                      | ~_auto_adjust_subplotpars~                     |
+|                   | ~/lib/matplotlib/font_manager.py:823~                      | ~FontProperties.set_size~                      |
+|                   | ~/lib/matplotlib/font_manager.py:1097~                     | ~FontManager.get_default_size~                 |
+|                   | ~/lib/matplotlib/pyplot.py:720~                            | ~xkcd~                                         |
+|                   | ~/lib/matplotlib/rcsetup.py:917~                           | ~None~                                         |
+|                   | ~/lib/matplotlib/sphinxext/mathmpl.py:132~                 | ~latex2png~                                    |
+|                   | ~/lib/matplotlib/tests/test_axes.py:3656~                  | ~test_tick_space_size_0~                       |
+|                   | ~/lib/matplotlib/tests/test_backend_pdf.py:29~             | ~test_use14corefonts~                          |
+|                   | ~/lib/matplotlib/tests/test_backend_pgf.py:117~            | ~test_rcupdate~                                |
+|                   | ~/lib/matplotlib/tests/test_backend_pgf.py:123~            | ~test_rcupdate~                                |
+|                   | ~/lib/matplotlib/tests/test_backend_svg.py:579~            | ~test_svg_font_string~                         |
+|                   | ~/lib/matplotlib/tests/test_ft2font.py:42~                 | ~test_fallback_smoke~                          |
+|                   | ~/lib/matplotlib/tests/test_ft2font.py:70~                 | ~test_font_fallback_chinese~                   |
+|                   | ~/lib/matplotlib/tests/test_legend.py:733~                 | ~test_legend_title_fontprop_fontsize~          |
+|                   | ~/lib/matplotlib/tests/test_legend.py:736~                 | ~test_legend_title_fontprop_fontsize~          |
+|                   | ~/lib/matplotlib/tests/test_mathtext.py:401~               | ~test_genfrac_displaystyle~                    |
+|                   | ~/lib/matplotlib/tests/test_rcparams.py:80~                | ~test_RcParams_class~                          |
+|                   | ~/lib/matplotlib/tests/test_rcparams.py:88~                | ~test_RcParams_class~                          |
+|                   | ~/lib/matplotlib/tests/test_rcparams.py:102~               | ~test_RcParams_class~                          |
+|                   | ~/lib/matplotlib/tests/test_text.py:522~                   | ~test_text_size_binding~                       |
+|                   | ~/lib/matplotlib/tests/test_text.py:525~                   | ~test_text_size_binding~                       |
+|                   | ~/lib/matplotlib/tests/test_usetex.py:88~                  | ~test_minus_no_descent~                        |
+|                   | ~/lib/matplotlib/tests/test_widgets.py:1087~               | ~test_radio_buttons~                           |
+|                   | ~/lib/matplotlib/tests/test_widgets.py:1132~               | ~test_check_buttons~                           |
+|                   | ~/lib/matplotlib/tests/test_widgets.py:1134~               | ~test_check_buttons~                           |
+|                   | ~/lib/matplotlib/texmanager.py:326~                        | ~TexManager.get_grey~                          |
+|                   | ~/lib/mpl_toolkits/axes_grid1/tests/test_axes_grid1.py:70~ | ~test_twin_axes_empty_and_removed~             |
+| ~font.serif~      | ~/lib/matplotlib/font_manager.py:1288~                     | ~FontManager.findfont~                         |
+|                   | ~/lib/matplotlib/rcsetup.py:918~                           | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_legend.py:1055~                | ~test_usetex_no_warn~                          |
+|                   | ~/lib/matplotlib/tests/test_texmanager.py:28~              | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_ticker.py:762~                 | ~TestScalarFormatter.test_mathtext_ticks~      |
+| ~font.sans-serif~ | ~/lib/matplotlib/font_manager.py:1288~                     | ~FontManager.findfont~                         |
+|                   | ~/lib/matplotlib/rcsetup.py:919~                           | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_backend_pdf.py:30~             | ~test_use14corefonts~                          |
+|                   | ~/lib/matplotlib/tests/test_font_manager.py:26~            | ~test_font_priority~                           |
+|                   | ~/lib/matplotlib/tests/test_font_manager.py:241~           | ~test_missing_family~                          |
+|                   | ~/lib/matplotlib/tests/test_texmanager.py:26~              | ~None~                                         |
+| ~font.cursive~    | ~/lib/matplotlib/font_manager.py:1288~                     | ~FontManager.findfont~                         |
+|                   | ~/lib/matplotlib/rcsetup.py:920~                           | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_rcparams.py:74~                | ~test_RcParams_class~                          |
+|                   | ~/lib/matplotlib/tests/test_rcparams.py:83~                | ~test_RcParams_class~                          |
+|                   | ~/lib/matplotlib/tests/test_rcparams.py:102~               | ~test_RcParams_class~                          |
+|                   | ~/lib/matplotlib/tests/test_texmanager.py:30~              | ~None~                                         |
+| ~font.fantasy~    | ~/lib/matplotlib/font_manager.py:1288~                     | ~FontManager.findfont~                         |
+|                   | ~/lib/matplotlib/rcsetup.py:921~                           | ~None~                                         |
+| ~font.monospace~  | ~/lib/matplotlib/font_manager.py:1289~                     | ~FontManager.findfont~                         |
+|                   | ~/lib/matplotlib/rcsetup.py:922~                           | ~None~                                         |
+|                   | ~/lib/matplotlib/tests/test_texmanager.py:32~              | ~None~                                         |
+
+* TEXT
+
+| ~text.color~          | ~/lib/matplotlib/legend.py:639~                                          | ~Legend.__init__~               |
+|                       | ~/lib/matplotlib/rcsetup.py:925~                                         | ~None~                          |
+|                       | ~/lib/matplotlib/text.py:173~                                            | ~Text._reset_visual_defaults~   |
+| ~text.hinting~        | ~/lib/matplotlib/backends/backend_agg.py:56~                             | ~get_hinting_flag~              |
+|                       | ~/lib/matplotlib/rcsetup.py:928~                                         | ~None~                          |
+|                       | ~/lib/matplotlib/testing/__init__.py:20~                                 | ~set_font_settings_for_testing~ |
+| ~text.hinting_factor~ | ~/lib/matplotlib/font_manager.py:1550~                                   | ~get_font~                      |
+|                       | ~/lib/matplotlib/rcsetup.py:930~                                         | ~None~                          |
+|                       | ~/lib/matplotlib/testing/__init__.py:21~                                 | ~set_font_settings_for_testing~ |
+|                       | ~/lib/matplotlib/tests/test_text.py:576~                                 | ~test_hinting_factor_backends~  |
+| ~text.kerning_factor~ | ~/lib/matplotlib/font_manager.py:1556~                                   | ~get_font~                      |
+|                       | ~/lib/matplotlib/rcsetup.py:931~                                         | ~None~                          |
+|                       | ~/lib/matplotlib/tests/test_artist.py:221~                               | ~test_default_edges~            |
+|                       | ~/lib/matplotlib/tests/test_image.py:31~                                 | ~test_image_interps~            |
+|                       | ~/lib/matplotlib/tests/test_legend.py:256~                               | ~test_hatching~                 |
+|                       | ~/lib/matplotlib/tests/test_text.py:136~                                 | ~test_multiline2~               |
+|                       | ~/lib/matplotlib/tests/test_text.py:678~                                 | ~test_large_subscript_title~    |
+|                       | ~/lib/mpl_toolkits/axisartist/tests/test_axis_artist.py:30~              | ~test_labelbase~                |
+|                       | ~/lib/mpl_toolkits/axisartist/tests/test_axis_artist.py:47~              | ~test_ticklabels~               |
+|                       | ~/lib/mpl_toolkits/axisartist/tests/test_axis_artist.py:82~              | ~test_axis_artist~              |
+|                       | ~/lib/mpl_toolkits/axisartist/tests/test_axislines.py:13~                | ~test_SubplotZero~              |
+|                       | ~/lib/mpl_toolkits/axisartist/tests/test_axislines.py:34~                | ~test_Subplot~                  |
+|                       | ~/lib/mpl_toolkits/axisartist/tests/test_floating_axes.py:71~            | ~test_curvelinear4~             |
+|                       | ~/lib/mpl_toolkits/axisartist/tests/test_grid_helper_curvelinear.py:81~  | ~test_polar_box~                |
+|                       | ~/lib/mpl_toolkits/axisartist/tests/test_grid_helper_curvelinear.py:143~ | ~test_axis_direction~           |
+| ~text.antialiased~    | ~/lib/matplotlib/_mathtext.py:127~                                       | ~Output.to_raster~              |
+|                       | ~/lib/matplotlib/backends/backend_agg.py:209~                            | ~RendererAgg.draw_text~         |
+|                       | ~/lib/matplotlib/backends/backend_cairo.py:208~                          | ~RendererCairo.draw_text~       |
+|                       | ~/lib/matplotlib/rcsetup.py:932~                                         | ~None~                          |
+|                       | ~/lib/matplotlib/tests/test_text.py:187~                                 | ~test_antialiasing~             |
+| ~text.parse_math~     | ~/lib/matplotlib/rcsetup.py:933~                                         | ~None~                          |
+|                       | ~/lib/matplotlib/tests/test_text.py:824~                                 | ~test_parse_math_rcparams~      |
+|                       | ~/lib/matplotlib/text.py:117~                                            | ~Text.__init__~                 |
+|                       | ~/lib/matplotlib/text.py:177~                                            | ~Text._reset_visual_defaults~   |
+
+* LaTeX
+
+| ~text.usetex~         | ~/lib/matplotlib/backends/backend_ps.py:258~   | ~RendererPS.__init__~                            |
+|                       | ~/lib/matplotlib/backends/backend_ps.py:575~   | ~RendererPS.draw_tex~                            |
+|                       | ~/lib/matplotlib/backends/backend_ps.py:845~   | ~FigureCanvasPS._print_ps~                       |
+|                       | ~/lib/matplotlib/backends/backend_ps.py:1065~  | ~FigureCanvasPS._print_figure_tex~               |
+|                       | ~/lib/matplotlib/dates.py:645~                 | ~DateFormatter.__init__~                         |
+|                       | ~/lib/matplotlib/dates.py:783~                 | ~ConciseDateFormatter.__init__~                  |
+|                       | ~/lib/matplotlib/dates.py:961~                 | ~AutoDateFormatter.__init__~                     |
+|                       | ~/lib/matplotlib/markers.py:508~               | ~MarkerStyle._set_mathtext_path~                 |
+|                       | ~/lib/matplotlib/pyplot.py:709~                | ~xkcd~                                           |
+|                       | ~/lib/matplotlib/rcsetup.py:926~               | ~None~                                           |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:29~  | ~None~                                           |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:32~  | ~None~                                           |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:54~  | ~test_savefig_to_stringio~                       |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:60~  | ~test_savefig_to_stringio~                       |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:105~ | ~test_tilde_in_tempfilename~                     |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:123~ | ~test_transparency_tex~                          |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:151~ | ~test_failing_latex~                             |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:171~ | ~test_usetex_preamble~                           |
+|                       | ~/lib/matplotlib/tests/test_determinism.py:19~ | ~_save_figure~                                   |
+|                       | ~/lib/matplotlib/tests/test_legend.py:1056~    | ~test_usetex_no_warn~                            |
+|                       | ~/lib/matplotlib/tests/test_rcparams.py:39~    | ~test_rcparams~                                  |
+|                       | ~/lib/matplotlib/tests/test_rcparams.py:46~    | ~test_rcparams~                                  |
+|                       | ~/lib/matplotlib/tests/test_rcparams.py:47~    | ~test_rcparams~                                  |
+|                       | ~/lib/matplotlib/tests/test_rcparams.py:48~    | ~test_rcparams~                                  |
+|                       | ~/lib/matplotlib/tests/test_rcparams.py:509~   | ~test_rcparams_reset_after_fail~                 |
+|                       | ~/lib/matplotlib/tests/test_rcparams.py:510~   | ~test_rcparams_reset_after_fail~                 |
+|                       | ~/lib/matplotlib/tests/test_rcparams.py:512~   | ~test_rcparams_reset_after_fail~                 |
+|                       | ~/lib/matplotlib/tests/test_rcparams.py:514~   | ~test_rcparams_reset_after_fail~                 |
+|                       | ~/lib/matplotlib/tests/test_style.py:125~      | ~test_context_with_union_of_dict_and_namedstyle~ |
+|                       | ~/lib/matplotlib/tests/test_texmanager.py:15~  | ~test_fontconfig_preamble~                       |
+|                       | ~/lib/matplotlib/tests/test_texmanager.py:52~  | ~test_unicode_characters~                        |
+|                       | ~/lib/matplotlib/tests/test_texmanager.py:70~  | ~test_openin_any_paranoid~                       |
+|                       | ~/lib/matplotlib/tests/test_text.py:594~       | ~test_usetex_is_copied~                          |
+|                       | ~/lib/matplotlib/tests/test_text.py:596~       | ~test_usetex_is_copied~                          |
+|                       | ~/lib/matplotlib/tests/test_text.py:620~       | ~test_single_artist_usenotex~                    |
+|                       | ~/lib/matplotlib/tests/test_ticker.py:883~     | ~TestLogFormatterSciNotation.test_basic~         |
+|                       | ~/lib/matplotlib/tests/test_ticker.py:1475~    | ~TestPercentFormatter.test_basic~                |
+|                       | ~/lib/matplotlib/tests/test_ticker.py:1481~    | ~TestPercentFormatter.test_latex~                |
+|                       | ~/lib/matplotlib/tests/test_usetex.py:22~      | ~test_usetex~                                    |
+|                       | ~/lib/matplotlib/tests/test_usetex.py:46~      | ~test_empty~                                     |
+|                       | ~/lib/matplotlib/tests/test_usetex.py:52~      | ~test_unicode_minus~                             |
+|                       | ~/lib/matplotlib/tests/test_usetex.py:63~      | ~test_mathdefault~                               |
+|                       | ~/lib/matplotlib/tests/test_usetex.py:106~     | ~test_usetex_packages~                           |
+|                       | ~/lib/matplotlib/tests/test_usetex.py:133~     | ~test_usetex_with_underscore~                    |
+|                       | ~/lib/matplotlib/tests/test_usetex.py:151~     | ~test_missing_psfont~                            |
+|                       | ~/lib/matplotlib/text.py:114~                  | ~Text.__init__~                                  |
+|                       | ~/lib/matplotlib/text.py:1294~                 | ~Text.set_usetex~                                |
+|                       | ~/lib/matplotlib/ticker.py:426~                | ~ScalarFormatter.__init__~                       |
+|                       | ~/lib/matplotlib/ticker.py:1053~               | ~LogFormatterMathtext.__call__~                  |
+|                       | ~/lib/matplotlib/ticker.py:1380~               | ~EngFormatter.set_usetex~                        |
+|                       | ~/lib/matplotlib/ticker.py:1552~               | ~PercentFormatter.symbol~                        |
+| ~text.latex.preamble~ | ~/lib/matplotlib/__init__.py:1021~             | ~rc_params_from_file~                            |
+|                       | ~/lib/matplotlib/__init__.py:1028~             | ~rc_params_from_file~                            |
+|                       | ~/lib/matplotlib/backends/backend_ps.py:1093~  | ~_convert_psfrags~                               |
+|                       | ~/lib/matplotlib/backends/backend_ps.py:1094~  | ~_convert_psfrags~                               |
+|                       | ~/lib/matplotlib/rcsetup.py:927~               | ~None~                                           |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:173~ | ~test_usetex_preamble~                           |
+|                       | ~/lib/matplotlib/tests/test_texmanager.py:18~  | ~test_fontconfig_preamble~                       |
+|                       | ~/lib/matplotlib/tests/test_usetex.py:112~     | ~test_usetex_packages~                           |
+|                       | ~/lib/matplotlib/tests/test_usetex.py:126~     | ~test_latex_pkg_already_loaded~                  |
+|                       | ~/lib/matplotlib/texmanager.py:191~            | ~TexManager.get_custom_preamble~                 |
+| ~mathtext.fontset~    | ~/lib/matplotlib/font_manager.py:889~          | ~FontProperties.set_math_fontfamily~             |
+|                       | ~/lib/matplotlib/font_manager.py:891~          | ~FontProperties.set_math_fontfamily~             |
+|                       | ~/lib/matplotlib/font_manager.py:893~          | ~FontProperties.set_math_fontfamily~             |
+|                       | ~/lib/matplotlib/rcsetup.py:941~               | ~None~                                           |
+|                       | ~/lib/matplotlib/sphinxext/mathmpl.py:132~     | ~latex2png~                                      |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:228~ | ~test_type42_font_without_prep~                  |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:210~   | ~test_mathtext_rendering~                        |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:225~   | ~test_mathtext_rendering_svgastext~              |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:252~   | ~test_mathfont_rendering~                        |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:425~   | ~test_mathtext_fallback~                         |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:463~   | ~test_default_math_fontfamily~                   |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:478~   | ~test_argument_order~                            |
+|                       | ~/lib/matplotlib/tests/test_text.py:840~       | ~test_pdf_chars_beyond_bmp~                      |
+|                       | ~/lib/matplotlib/tests/test_ticker.py:774~     | ~TestScalarFormatter.test_cmr10_substitutions~   |
+| ~mathtext.bf~         | ~/lib/matplotlib/rcsetup.py:939~               | ~None~                                           |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:428~   | ~test_mathtext_fallback~                         |
+| ~mathtext.cal~        | ~/lib/matplotlib/rcsetup.py:935~               | ~None~                                           |
+| ~mathtext.it~         | ~/lib/matplotlib/rcsetup.py:938~               | ~None~                                           |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:427~   | ~test_mathtext_fallback~                         |
+| ~mathtext.rm~         | ~/lib/matplotlib/rcsetup.py:936~               | ~None~                                           |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:426~   | ~test_mathtext_fallback~                         |
+| ~mathtext.sf~         | ~/lib/matplotlib/rcsetup.py:940~               | ~None~                                           |
+| ~mathtext.tt~         | ~/lib/matplotlib/rcsetup.py:937~               | ~None~                                           |
+| ~mathtext.fallback~   | ~/lib/matplotlib/_mathtext.py:478~             | ~UnicodeFonts.__init__~                          |
+|                       | ~/lib/matplotlib/rcsetup.py:945~               | ~None~                                           |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:408~   | ~test_mathtext_fallback_valid~                   |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:414~   | ~test_mathtext_fallback_invalid~                 |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:429~   | ~test_mathtext_fallback~                         |
+| ~mathtext.default~    | ~/lib/matplotlib/_mathtext.py:329~             | ~TruetypeFonts.get_xheight~                      |
+|                       | ~/lib/matplotlib/_mathtext.py:732~             | ~StixFonts._map_virtual_font~                    |
+|                       | ~/lib/matplotlib/_mathtext.py:2024~            | ~Parser.non_math~                                |
+|                       | ~/lib/matplotlib/_mathtext.py:2048~            | ~Parser._make_space~                             |
+|                       | ~/lib/matplotlib/_mathtext.py:2439~            | ~Parser._genfrac~                                |
+|                       | ~/lib/matplotlib/rcsetup.py:943~               | ~None~                                           |
+
+* AXES
+
+| ~axes.facecolor~                  | ~/lib/matplotlib/axes/_base.py:677~                   | ~_AxesBase.__init__~                                 |
+|                                   | ~/lib/matplotlib/legend.py:567~                       | ~Legend.__init__~                                    |
+|                                   | ~/lib/matplotlib/rcsetup.py:973~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_rcparams.py:143~          | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_rcparams.py:145~          | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_rcparams.py:149~          | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_style.py:69~              | ~test_use_url~                                       |
+| ~axes.edgecolor~                  | ~/lib/matplotlib/colorbar.py:381~                     | ~Colorbar.__init__~                                  |
+|                                   | ~/lib/matplotlib/legend.py:572~                       | ~Legend.__init__~                                    |
+|                                   | ~/lib/matplotlib/pyplot.py:730~                       | ~xkcd~                                               |
+|                                   | ~/lib/matplotlib/rcsetup.py:974~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/spines.py:59~                        | ~Spine.__init__~                                     |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:395~              | ~test_twin_logscale~                                 |
+|                                   | ~/lib/matplotlib/tests/test_rcparams.py:147~          | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_rcparams.py:567~          | ~test_deprecation~                                   |
+|                                   | ~/lib/matplotlib/tests/test_rcparams.py:570~          | ~test_deprecation~                                   |
+|                                   | ~/lib/matplotlib/tests/test_rcparams.py:573~          | ~test_deprecation~                                   |
+|                                   | ~/lib/mpl_toolkits/axisartist/axis_artist.py:846~     | ~AxisArtist._init_line~                              |
+|                                   | ~/lib/mpl_toolkits/axisartist/axisline_style.py:181~  | ~None~                                               |
+|                                   | ~/lib/mpl_toolkits/mplot3d/axis3d.py:112~             | ~Axis.__init__~                                      |
+| ~axes.linewidth~                  | ~/lib/matplotlib/colorbar.py:382~                     | ~Colorbar.__init__~                                  |
+|                                   | ~/lib/matplotlib/pyplot.py:724~                       | ~xkcd~                                               |
+|                                   | ~/lib/matplotlib/rcsetup.py:975~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/spines.py:60~                        | ~Spine.__init__~                                     |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:396~              | ~test_twin_logscale~                                 |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:5283~             | ~test_twin_spines_on_top~                            |
+|                                   | ~/lib/matplotlib/tests/test_colorbar.py:353~          | ~test_colorbar_closed_patch~                         |
+|                                   | ~/lib/matplotlib/tests/test_colorbar.py:976~          | ~test_colorbar_extend_drawedges~                     |
+|                                   | ~/lib/matplotlib/tests/test_colorbar.py:1020~         | ~test_colorbar_contourf_extend_patches~              |
+|                                   | ~/lib/matplotlib/tests/test_rcparams.py:557~          | ~test_deprecation~                                   |
+|                                   | ~/lib/matplotlib/tests/test_rcparams.py:560~          | ~test_deprecation~                                   |
+|                                   | ~/lib/matplotlib/tests/test_rcparams.py:563~          | ~test_deprecation~                                   |
+|                                   | ~/lib/mpl_toolkits/axisartist/axis_artist.py:848~     | ~AxisArtist._init_line~                              |
+|                                   | ~/lib/mpl_toolkits/mplot3d/axis3d.py:111~             | ~Axis.__init__~                                      |
+| ~axes.grid~                       | ~/lib/matplotlib/axes/_base.py:1298~                  | ~_AxesBase.__clear~                                  |
+|                                   | ~/lib/matplotlib/axis.py:91~                          | ~Tick.__init__~                                      |
+|                                   | ~/lib/matplotlib/axis.py:94~                          | ~Tick.__init__~                                      |
+|                                   | ~/lib/matplotlib/axis.py:847~                         | ~Axis._reset_major_tick_kw~                          |
+|                                   | ~/lib/matplotlib/axis.py:853~                         | ~Axis._reset_minor_tick_kw~                          |
+|                                   | ~/lib/matplotlib/axis.py:887~                         | ~Axis.clear~                                         |
+|                                   | ~/lib/matplotlib/axis.py:890~                         | ~Axis.clear~                                         |
+|                                   | ~/lib/matplotlib/projections/geo.py:54~               | ~GeoAxes.clear~                                      |
+|                                   | ~/lib/matplotlib/pyplot.py:728~                       | ~xkcd~                                               |
+|                                   | ~/lib/matplotlib/rcsetup.py:990~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:783~              | ~test_single_point~                                  |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:5317~             | ~test_rcparam_grid_minor~                            |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:5349~             | ~test_reset_grid~                                    |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6072~             | ~test_rc_grid~                                       |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6076~             | ~test_rc_grid~                                       |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6080~             | ~test_rc_grid~                                       |
+|                                   | ~/lib/matplotlib/tests/test_colorbar.py:1104~         | ~test_colorbar_no_warning_rcparams_grid_true~        |
+|                                   | ~/lib/matplotlib/tests/test_colorbar.py:1107~         | ~test_colorbar_no_warning_rcparams_grid_true~        |
+| ~axes.grid.axis~                  | ~/lib/matplotlib/axes/_base.py:1311~                  | ~_AxesBase.__clear~                                  |
+|                                   | ~/lib/matplotlib/rcsetup.py:992~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6073~             | ~test_rc_grid~                                       |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6077~             | ~test_rc_grid~                                       |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6081~             | ~test_rc_grid~                                       |
+| ~axes.grid.which~                 | ~/lib/matplotlib/axes/_base.py:1310~                  | ~_AxesBase.__clear~                                  |
+|                                   | ~/lib/matplotlib/axis.py:89~                          | ~Tick.__init__~                                      |
+|                                   | ~/lib/matplotlib/axis.py:92~                          | ~Tick.__init__~                                      |
+|                                   | ~/lib/matplotlib/axis.py:848~                         | ~Axis._reset_major_tick_kw~                          |
+|                                   | ~/lib/matplotlib/axis.py:854~                         | ~Axis._reset_minor_tick_kw~                          |
+|                                   | ~/lib/matplotlib/axis.py:888~                         | ~Axis.clear~                                         |
+|                                   | ~/lib/matplotlib/axis.py:891~                         | ~Axis.clear~                                         |
+|                                   | ~/lib/matplotlib/rcsetup.py:991~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:5317~             | ~test_rcparam_grid_minor~                            |
+| ~axes.titlelocation~              | ~/lib/matplotlib/axes/_axes.py:151~                   | ~Axes.set_title~                                     |
+|                                   | ~/lib/matplotlib/rcsetup.py:983~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6265~             | ~test_title_location_roundtrip~                      |
+| ~axes.titlesize~                  | ~/lib/matplotlib/axes/_axes.py:122~                   | ~Axes.set_title~                                     |
+|                                   | ~/lib/matplotlib/axes/_axes.py:166~                   | ~Axes.set_title~                                     |
+|                                   | ~/lib/matplotlib/axes/_base.py:1313~                  | ~_AxesBase.__clear~                                  |
+|                                   | ~/lib/matplotlib/axis.py:1919~                        | ~Axis.set_ticklabels~                                |
+|                                   | ~/lib/matplotlib/rcsetup.py:982~                      | ~None~                                               |
+| ~axes.titleweight~                | ~/lib/matplotlib/axes/_axes.py:123~                   | ~Axes.set_title~                                     |
+|                                   | ~/lib/matplotlib/axes/_axes.py:167~                   | ~Axes.set_title~                                     |
+|                                   | ~/lib/matplotlib/axes/_base.py:1314~                  | ~_AxesBase.__clear~                                  |
+|                                   | ~/lib/matplotlib/axis.py:1920~                        | ~Axis.set_ticklabels~                                |
+|                                   | ~/lib/matplotlib/rcsetup.py:984~                      | ~None~                                               |
+| ~axes.titlecolor~                 | ~/lib/matplotlib/axes/_axes.py:124~                   | ~Axes.set_title~                                     |
+|                                   | ~/lib/matplotlib/axes/_axes.py:170~                   | ~Axes.set_title~                                     |
+|                                   | ~/lib/matplotlib/rcsetup.py:985~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_rcparams.py:187~          | ~test_axes_titlecolor_rcparams~                      |
+| ~axes.titley~                     | ~/lib/matplotlib/axes/_axes.py:154~                   | ~Axes.set_title~                                     |
+|                                   | ~/lib/matplotlib/axes/_base.py:1316~                  | ~_AxesBase.__clear~                                  |
+|                                   | ~/lib/matplotlib/rcsetup.py:987~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6720~             | ~test_title_xticks_top~                              |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6730~             | ~test_title_xticks_top_both~                         |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6752~             | ~test_title_above_offset~                            |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6772~             | ~test_title_no_move_off_page~                        |
+|                                   | ~/lib/matplotlib/tests/test_text.py:679~              | ~test_large_subscript_title~                         |
+| ~axes.titlepad~                   | ~/lib/matplotlib/axes/_axes.py:174~                   | ~Axes.set_title~                                     |
+|                                   | ~/lib/matplotlib/axes/_base.py:1340~                  | ~_AxesBase.__clear~                                  |
+|                                   | ~/lib/matplotlib/rcsetup.py:989~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6259~             | ~test_title_pad~                                     |
+| ~axes.labelsize~                  | ~/lib/matplotlib/axis.py:658~                         | ~Axis.__init__~                                      |
+|                                   | ~/lib/matplotlib/axis.py:873~                         | ~Axis.clear~                                         |
+|                                   | ~/lib/matplotlib/rcsetup.py:993~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:8484~             | ~test_rc_axes_label_formatting~                      |
+|                                   | ~/lib/mpl_toolkits/axisartist/axis_artist.py:994~     | ~AxisArtist._init_label~                             |
+| ~axes.labelpad~                   | ~/lib/matplotlib/axis.py:666~                         | ~Axis.__init__~                                      |
+|                                   | ~/lib/matplotlib/axis.py:876~                         | ~Axis.clear~                                         |
+|                                   | ~/lib/matplotlib/rcsetup.py:994~                      | ~None~                                               |
+|                                   | ~/lib/mpl_toolkits/mplot3d/tests/test_axes3d.py:968~  | ~test_axes3d_labelpad~                               |
+| ~axes.labelweight~                | ~/lib/matplotlib/axis.py:659~                         | ~Axis.__init__~                                      |
+|                                   | ~/lib/matplotlib/axis.py:874~                         | ~Axis.clear~                                         |
+|                                   | ~/lib/matplotlib/rcsetup.py:995~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:8485~             | ~test_rc_axes_label_formatting~                      |
+|                                   | ~/lib/mpl_toolkits/axisartist/axis_artist.py:995~     | ~AxisArtist._init_label~                             |
+| ~axes.labelcolor~                 | ~/lib/matplotlib/axis.py:660~                         | ~Axis.__init__~                                      |
+|                                   | ~/lib/matplotlib/axis.py:872~                         | ~Axis.clear~                                         |
+|                                   | ~/lib/matplotlib/rcsetup.py:996~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:8483~             | ~test_rc_axes_label_formatting~                      |
+| ~axes.axisbelow~                  | ~/lib/matplotlib/axes/_base.py:680~                   | ~_AxesBase.__init__~                                 |
+|                                   | ~/lib/matplotlib/rcsetup.py:972~                      | ~None~                                               |
+| ~axes.formatter.limits~           | ~/lib/matplotlib/rcsetup.py:999~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:801~              | ~test_single_date~                                   |
+|                                   | ~/lib/matplotlib/tests/test_units.py:85~              | ~test_numpy_facade~                                  |
+|                                   | ~/lib/matplotlib/ticker.py:431~                       | ~ScalarFormatter.__init__~                           |
+| ~axes.formatter.use_locale~       | ~/lib/matplotlib/__init__.py:1059~                    | ~None~                                               |
+|                                   | ~/lib/matplotlib/rcsetup.py:1001~                     | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_ticker.py:711~            | ~TestScalarFormatter.test_use_locale~                |
+|                                   | ~/lib/matplotlib/ticker.py:503~                       | ~ScalarFormatter.set_useLocale~                      |
+|                                   | ~/lib/mpl_toolkits/mplot3d/tests/test_axes3d.py:1449~ | ~test_ticklabel_format~                              |
+|                                   | ~/lib/mpl_toolkits/mplot3d/tests/test_axes3d.py:1470~ | ~test_ticklabel_format~                              |
+| ~axes.formatter.use_mathtext~     | ~/lib/matplotlib/rcsetup.py:1002~                     | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_mathtext.py:506~          | ~test_mathtext_cmr10_minus_sign~                     |
+|                                   | ~/lib/matplotlib/tests/test_ticker.py:695~            | ~TestScalarFormatter.test_useMathText~               |
+|                                   | ~/lib/matplotlib/tests/test_ticker.py:763~            | ~TestScalarFormatter.test_mathtext_ticks~            |
+|                                   | ~/lib/matplotlib/tests/test_ticker.py:775~            | ~TestScalarFormatter.test_cmr10_substitutions~       |
+|                                   | ~/lib/matplotlib/tests/test_usetex.py:58~             | ~test_mathdefault~                                   |
+|                                   | ~/lib/matplotlib/ticker.py:544~                       | ~ScalarFormatter.set_useMathText~                    |
+|                                   | ~/lib/matplotlib/ticker.py:1391~                      | ~EngFormatter.set_useMathText~                       |
+|                                   | ~/lib/mpl_toolkits/mplot3d/tests/test_axes3d.py:1452~ | ~test_ticklabel_format~                              |
+|                                   | ~/lib/mpl_toolkits/mplot3d/tests/test_axes3d.py:1473~ | ~test_ticklabel_format~                              |
+| ~axes.formatter.min_exponent~     | ~/lib/matplotlib/rcsetup.py:1004~                     | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_ticker.py:854~            | ~TestLogFormatterMathtext.test_min_exponent~         |
+|                                   | ~/lib/matplotlib/ticker.py:1054~                      | ~LogFormatterMathtext.__call__~                      |
+| ~axes.formatter.useoffset~        | ~/lib/matplotlib/rcsetup.py:1005~                     | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_ticker.py:688~            | ~TestScalarFormatter.test_use_offset~                |
+|                                   | ~/lib/matplotlib/ticker.py:422~                       | ~ScalarFormatter.__init__~                           |
+|                                   | ~/lib/mpl_toolkits/mplot3d/tests/test_axes3d.py:1447~ | ~test_ticklabel_format~                              |
+|                                   | ~/lib/mpl_toolkits/mplot3d/tests/test_axes3d.py:1468~ | ~test_ticklabel_format~                              |
+| ~axes.formatter.offset_threshold~ | ~/lib/matplotlib/rcsetup.py:1006~                     | ~None~                                               |
+|                                   | ~/lib/matplotlib/ticker.py:424~                       | ~ScalarFormatter.__init__~                           |
+| ~axes.spines.left~                | ~/lib/matplotlib/rcsetup.py:977~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6060~             | ~test_rc_spines~                                     |
+| ~axes.spines.bottom~              | ~/lib/matplotlib/rcsetup.py:979~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6063~             | ~test_rc_spines~                                     |
+| ~axes.spines.top~                 | ~/lib/matplotlib/rcsetup.py:980~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6062~             | ~test_rc_spines~                                     |
+| ~axes.spines.right~               | ~/lib/matplotlib/rcsetup.py:978~                      | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6061~             | ~test_rc_spines~                                     |
+| ~axes.unicode_minus~              | ~/lib/matplotlib/pyplot.py:729~                       | ~xkcd~                                               |
+|                                   | ~/lib/matplotlib/rcsetup.py:1007~                     | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_ticker.py:664~            | ~TestScalarFormatter.test_unicode_minus~             |
+|                                   | ~/lib/matplotlib/tests/test_ticker.py:737~            | ~TestScalarFormatter.test_format_data~               |
+|                                   | ~/lib/matplotlib/tests/test_ticker.py:1292~           | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_ticker.py:1344~           | ~TestEngFormatter.test_params~                       |
+|                                   | ~/lib/matplotlib/ticker.py:249~                       | ~Formatter.fix_minus~                                |
+| ~axes.prop_cycle~                 | ~/lib/matplotlib/_layoutgrid.py:518~                  | ~plot_children~                                      |
+|                                   | ~/lib/matplotlib/axes/_base.py:237~                   | ~_process_plot_var_args.set_prop_cycle~              |
+|                                   | ~/lib/matplotlib/colors.py:292~                       | ~to_rgba~                                            |
+|                                   | ~/lib/matplotlib/rcsetup.py:1010~                     | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_colors.py:1241~           | ~test_cn~                                            |
+|                                   | ~/lib/matplotlib/tests/test_colors.py:1246~           | ~test_cn~                                            |
+|                                   | ~/lib/matplotlib/tests/test_colors.py:1253~           | ~test_cn~                                            |
+|                                   | ~/lib/matplotlib/tests/test_lines.py:242~             | ~test_lw_scaling~                                    |
+|                                   | ~/lib/matplotlib/tests/test_lines.py:405~             | ~test_markevery_prop_cycle~                          |
+| ~axes.xmargin~                    | ~/lib/matplotlib/axes/_base.py:1290~                  | ~_AxesBase.__clear~                                  |
+|                                   | ~/lib/matplotlib/rcsetup.py:1014~                     | ~None~                                               |
+| ~axes.ymargin~                    | ~/lib/matplotlib/axes/_base.py:1291~                  | ~_AxesBase.__clear~                                  |
+|                                   | ~/lib/matplotlib/rcsetup.py:1015~                     | ~None~                                               |
+| ~axes.zmargin~                    | ~/lib/matplotlib/rcsetup.py:1016~                     | ~None~                                               |
+|                                   | ~/lib/mpl_toolkits/mplot3d/axes3d.py:979~             | ~Axes3D.clear~                                       |
+| ~axes.autolimit_mode~             | ~/lib/matplotlib/rcsetup.py:1013~                     | ~None~                                               |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6447~             | ~test_auto_numticks_log~                             |
+|                                   | ~/lib/matplotlib/tests/test_axes.py:6879~             | ~test_log_margins~                                   |
+|                                   | ~/lib/matplotlib/tests/test_ticker.py:70~             | ~TestMultipleLocator.test_view_limits~               |
+|                                   | ~/lib/matplotlib/tests/test_ticker.py:79~             | ~TestMultipleLocator.test_view_limits_round_numbers~ |
+|                                   | ~/lib/matplotlib/ticker.py:1821~                      | ~LinearLocator.view_limits~                          |
+|                                   | ~/lib/matplotlib/ticker.py:1865~                      | ~MultipleLocator.view_limits~                        |
+|                                   | ~/lib/matplotlib/ticker.py:2080~                      | ~MaxNLocator._raw_ticks~                             |
+|                                   | ~/lib/matplotlib/ticker.py:2143~                      | ~MaxNLocator.view_limits~                            |
+|                                   | ~/lib/matplotlib/ticker.py:2390~                      | ~LogLocator.view_limits~                             |
+|                                   | ~/lib/matplotlib/ticker.py:2566~                      | ~SymmetricalLogLocator.view_limits~                  |
+| ~polaraxes.grid~                  | ~/lib/matplotlib/projections/polar.py:838~            | ~PolarAxes.clear~                                    |
+|                                   | ~/lib/matplotlib/rcsetup.py:1018~                     | ~None~                                               |
+| ~axes3d.grid~                     | ~/lib/matplotlib/rcsetup.py:1019~                     | ~None~                                               |
+|                                   | ~/lib/mpl_toolkits/mplot3d/axes3d.py:982~             | ~Axes3D.clear~                                       |
+| ~axes3d.xaxis.panecolor~          | ~/lib/matplotlib/rcsetup.py:1021~                     | ~None~                                               |
+|                                   | ~/lib/mpl_toolkits/mplot3d/tests/test_axes3d.py:2147~ | ~test_panecolor_rcparams~                            |
+| ~axes3d.yaxis.panecolor~          | ~/lib/matplotlib/rcsetup.py:1022~                     | ~None~                                               |
+|                                   | ~/lib/mpl_toolkits/mplot3d/tests/test_axes3d.py:2148~ | ~test_panecolor_rcparams~                            |
+| ~axes3d.zaxis.panecolor~          | ~/lib/matplotlib/rcsetup.py:1023~                     | ~None~                                               |
+|                                   | ~/lib/mpl_toolkits/mplot3d/tests/test_axes3d.py:2149~ | ~test_panecolor_rcparams~                            |
+
+* AXIS
+
+| ~xaxis.labellocation~ | ~/lib/matplotlib/axes/_base.py:3453~     | ~_AxesBase.set_xlabel~ |
+|                       | ~/lib/matplotlib/rcsetup.py:968~         | ~None~                 |
+|                       | ~/lib/matplotlib/tests/test_axes.py:114~ | ~test_label_loc_rc~    |
+| ~yaxis.labellocation~ | ~/lib/matplotlib/axes/_base.py:3701~     | ~_AxesBase.set_ylabel~ |
+|                       | ~/lib/matplotlib/rcsetup.py:969~         | ~None~                 |
+|                       | ~/lib/matplotlib/tests/test_axes.py:115~ | ~test_label_loc_rc~    |
+
+* DATES
+
+| ~date.autoformatter.year~        | ~/lib/matplotlib/dates.py:886~             | ~None~                                    |
+|                                  | ~/lib/matplotlib/dates.py:963~             | ~AutoDateFormatter.__init__~              |
+|                                  | ~/lib/matplotlib/rcsetup.py:1030~          | ~None~                                    |
+| ~date.autoformatter.month~       | ~/lib/matplotlib/dates.py:887~             | ~None~                                    |
+|                                  | ~/lib/matplotlib/dates.py:964~             | ~AutoDateFormatter.__init__~              |
+|                                  | ~/lib/matplotlib/rcsetup.py:1031~          | ~None~                                    |
+| ~date.autoformatter.day~         | ~/lib/matplotlib/dates.py:888~             | ~None~                                    |
+|                                  | ~/lib/matplotlib/dates.py:965~             | ~AutoDateFormatter.__init__~              |
+|                                  | ~/lib/matplotlib/rcsetup.py:1032~          | ~None~                                    |
+| ~date.autoformatter.hour~        | ~/lib/matplotlib/dates.py:889~             | ~None~                                    |
+|                                  | ~/lib/matplotlib/dates.py:966~             | ~AutoDateFormatter.__init__~              |
+|                                  | ~/lib/matplotlib/rcsetup.py:1033~          | ~None~                                    |
+| ~date.autoformatter.minute~      | ~/lib/matplotlib/dates.py:890~             | ~None~                                    |
+|                                  | ~/lib/matplotlib/dates.py:967~             | ~AutoDateFormatter.__init__~              |
+|                                  | ~/lib/matplotlib/rcsetup.py:1034~          | ~None~                                    |
+|                                  | ~/lib/matplotlib/tests/test_dates.py:303~  | ~test_locator_set_formatter~              |
+| ~date.autoformatter.second~      | ~/lib/matplotlib/dates.py:891~             | ~None~                                    |
+|                                  | ~/lib/matplotlib/dates.py:968~             | ~AutoDateFormatter.__init__~              |
+|                                  | ~/lib/matplotlib/rcsetup.py:1035~          | ~None~                                    |
+| ~date.autoformatter.microsecond~ | ~/lib/matplotlib/dates.py:892~             | ~None~                                    |
+|                                  | ~/lib/matplotlib/dates.py:969~             | ~AutoDateFormatter.__init__~              |
+|                                  | ~/lib/matplotlib/rcsetup.py:1036~          | ~None~                                    |
+| ~date.epoch~                     | ~/lib/matplotlib/dates.py:316~             | ~get_epoch~                               |
+|                                  | ~/lib/matplotlib/rcsetup.py:1029~          | ~None~                                    |
+|                                  | ~/lib/matplotlib/style/core.py:46~         | ~None~                                    |
+| ~date.converter~                 | ~/lib/matplotlib/dates.py:1878~            | ~_SwitchableDateConverter._get_converter~ |
+|                                  | ~/lib/matplotlib/rcsetup.py:1038~          | ~None~                                    |
+|                                  | ~/lib/matplotlib/tests/test_dates.py:1245~ | ~test_change_converter~                   |
+|                                  | ~/lib/matplotlib/tests/test_dates.py:1254~ | ~test_change_converter~                   |
+|                                  | ~/lib/matplotlib/tests/test_dates.py:1262~ | ~test_change_converter~                   |
+| ~date.interval_multiples~        | ~/lib/matplotlib/dates.py:1879~            | ~_SwitchableDateConverter._get_converter~ |
+|                                  | ~/lib/matplotlib/rcsetup.py:1040~          | ~None~                                    |
+|                                  | ~/lib/matplotlib/tests/test_dates.py:1266~ | ~test_change_interval_multiples~          |
+|                                  | ~/lib/matplotlib/tests/test_dates.py:1275~ | ~test_change_interval_multiples~          |
+
+* TICKS
+
+| ~xtick.top~           | ~/lib/matplotlib/axes/_base.py:705~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:720~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1084~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6091~                  | ~test_rc_tick~                                    |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6111~                  | ~test_rc_major_minor_tick~                        |
+| ~xtick.bottom~        | ~/lib/matplotlib/axes/_base.py:706~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:721~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1085~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6091~                  | ~test_rc_tick~                                    |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6112~                  | ~test_rc_major_minor_tick~                        |
+| ~xtick.labeltop~      | ~/lib/matplotlib/axes/_base.py:707~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:722~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1086~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_subplots.py:172~               | ~test_subplots_hide_ticklabels~                   |
+| ~xtick.labelbottom~   | ~/lib/matplotlib/axes/_base.py:709~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:724~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1087~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_subplots.py:172~               | ~test_subplots_hide_ticklabels~                   |
+| ~xtick.major.size~    | ~/lib/matplotlib/pyplot.py:731~                            | ~xkcd~                                            |
+|                       | ~/lib/matplotlib/rcsetup.py:1088~                          | ~None~                                            |
+| ~xtick.minor.size~    | ~/lib/matplotlib/rcsetup.py:1089~                          | ~None~                                            |
+| ~xtick.major.width~   | ~/lib/matplotlib/pyplot.py:732~                            | ~xkcd~                                            |
+|                       | ~/lib/matplotlib/rcsetup.py:1090~                          | ~None~                                            |
+|                       | ~/lib/mpl_toolkits/mplot3d/axis3d.py:123~                  | ~Axis.__init__~                                   |
+| ~xtick.minor.width~   | ~/lib/matplotlib/rcsetup.py:1091~                          | ~None~                                            |
+|                       | ~/lib/mpl_toolkits/mplot3d/axis3d.py:126~                  | ~Axis.__init__~                                   |
+| ~xtick.major.pad~     | ~/lib/matplotlib/rcsetup.py:1092~                          | ~None~                                            |
+| ~xtick.minor.pad~     | ~/lib/matplotlib/rcsetup.py:1093~                          | ~None~                                            |
+| ~xtick.color~         | ~/lib/matplotlib/axis.py:2216~                             | ~XAxis._init~                                     |
+|                       | ~/lib/matplotlib/rcsetup.py:1094~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:7781~                  | ~test_xtickcolor_is_not_xticklabelcolor~          |
+|                       | ~/lib/matplotlib/tests/test_axes.py:7805~                  | ~test_xaxis_offsetText_color~                     |
+|                       | ~/lib/mpl_toolkits/axisartist/axis_artist.py:970~          | ~AxisArtist._init_offsetText~                     |
+| ~xtick.labelcolor~    | ~/lib/matplotlib/axis.py:2215~                             | ~XAxis._init~                                     |
+|                       | ~/lib/matplotlib/axis.py:2218~                             | ~XAxis._init~                                     |
+|                       | ~/lib/matplotlib/rcsetup.py:1095~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:7782~                  | ~test_xtickcolor_is_not_xticklabelcolor~          |
+|                       | ~/lib/matplotlib/tests/test_axes.py:7801~                  | ~test_xaxis_offsetText_color~                     |
+|                       | ~/lib/matplotlib/tests/test_axes.py:7806~                  | ~test_xaxis_offsetText_color~                     |
+| ~xtick.labelsize~     | ~/lib/matplotlib/axes/_axes.py:3252~                       | ~Axes.pie~                                        |
+|                       | ~/lib/matplotlib/axis.py:2225~                             | ~XAxis._init~                                     |
+|                       | ~/lib/matplotlib/rcsetup.py:1101~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:7826~                  | ~test_relative_ticklabel_sizes~                   |
+|                       | ~/lib/mpl_toolkits/axes_grid1/tests/test_axes_grid1.py:70~ | ~test_twin_axes_empty_and_removed~                |
+| ~xtick.direction~     | ~/lib/matplotlib/rcsetup.py:1102~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6991~                  | ~test_tick_padding_tightbbox~                     |
+| ~xtick.minor.visible~ | ~/lib/matplotlib/axes/_base.py:1285~                       | ~_AxesBase.__clear~                               |
+|                       | ~/lib/matplotlib/colorbar.py:523~                          | ~Colorbar._draw_all~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1096~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/scale.py:109~                             | ~LinearScale.set_default_locators_and_formatters~ |
+|                       | ~/lib/matplotlib/scale.py:194~                             | ~FuncScale.set_default_locators_and_formatters~   |
+|                       | ~/lib/matplotlib/tests/test_axes.py:551~                   | ~test_minorticks_on_rcParams_both~                |
+|                       | ~/lib/matplotlib/tests/test_colorbar.py:431~               | ~test_cbar_minorticks_for_rc_xyminortickvisible~  |
+|                       | ~/lib/matplotlib/tests/test_colorbar.py:438~               | ~test_cbar_minorticks_for_rc_xyminortickvisible~  |
+|                       | ~/lib/matplotlib/tests/test_ticker.py:1531~                | ~test_minorticks_rc~                              |
+| ~xtick.major.top~     | ~/lib/matplotlib/axes/_base.py:720~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:723~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1099~                          | ~None~                                            |
+| ~xtick.major.bottom~  | ~/lib/matplotlib/axes/_base.py:721~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:725~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1100~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6114~                  | ~test_rc_major_minor_tick~                        |
+| ~xtick.minor.top~     | ~/lib/matplotlib/axes/_base.py:705~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:708~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1097~                          | ~None~                                            |
+| ~xtick.minor.bottom~  | ~/lib/matplotlib/axes/_base.py:706~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:710~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1098~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6114~                  | ~test_rc_major_minor_tick~                        |
+| ~xtick.alignment~     | ~/lib/matplotlib/axes/_base.py:962~                        | ~_AxesBase.get_xaxis_text1_transform~             |
+|                       | ~/lib/matplotlib/axes/_base.py:988~                        | ~_AxesBase.get_xaxis_text2_transform~             |
+|                       | ~/lib/matplotlib/rcsetup.py:1103~                          | ~None~                                            |
+| ~ytick.left~          | ~/lib/matplotlib/axes/_base.py:711~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:726~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1105~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6092~                  | ~test_rc_tick~                                    |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6112~                  | ~test_rc_major_minor_tick~                        |
+| ~ytick.right~         | ~/lib/matplotlib/axes/_base.py:712~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:727~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1106~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6092~                  | ~test_rc_tick~                                    |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6111~                  | ~test_rc_major_minor_tick~                        |
+| ~ytick.labelleft~     | ~/lib/matplotlib/axes/_base.py:713~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:728~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1107~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_subplots.py:173~               | ~test_subplots_hide_ticklabels~                   |
+| ~ytick.labelright~    | ~/lib/matplotlib/axes/_base.py:715~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:730~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1108~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_subplots.py:173~               | ~test_subplots_hide_ticklabels~                   |
+| ~ytick.major.size~    | ~/lib/matplotlib/pyplot.py:733~                            | ~xkcd~                                            |
+|                       | ~/lib/matplotlib/rcsetup.py:1109~                          | ~None~                                            |
+| ~ytick.minor.size~    | ~/lib/matplotlib/rcsetup.py:1110~                          | ~None~                                            |
+| ~ytick.major.width~   | ~/lib/matplotlib/pyplot.py:734~                            | ~xkcd~                                            |
+|                       | ~/lib/matplotlib/rcsetup.py:1111~                          | ~None~                                            |
+|                       | ~/lib/mpl_toolkits/mplot3d/axis3d.py:124~                  | ~Axis.__init__~                                   |
+| ~ytick.minor.width~   | ~/lib/matplotlib/rcsetup.py:1112~                          | ~None~                                            |
+|                       | ~/lib/mpl_toolkits/mplot3d/axis3d.py:127~                  | ~Axis.__init__~                                   |
+| ~ytick.major.pad~     | ~/lib/matplotlib/rcsetup.py:1113~                          | ~None~                                            |
+| ~ytick.minor.pad~     | ~/lib/matplotlib/rcsetup.py:1114~                          | ~None~                                            |
+| ~ytick.color~         | ~/lib/matplotlib/axis.py:2456~                             | ~YAxis._init~                                     |
+|                       | ~/lib/matplotlib/rcsetup.py:1115~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:7791~                  | ~test_ytickcolor_is_not_yticklabelcolor~          |
+|                       | ~/lib/matplotlib/tests/test_axes.py:7816~                  | ~test_yaxis_offsetText_color~                     |
+| ~ytick.labelcolor~    | ~/lib/matplotlib/axis.py:2455~                             | ~YAxis._init~                                     |
+|                       | ~/lib/matplotlib/axis.py:2458~                             | ~YAxis._init~                                     |
+|                       | ~/lib/matplotlib/rcsetup.py:1116~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:7792~                  | ~test_ytickcolor_is_not_yticklabelcolor~          |
+|                       | ~/lib/matplotlib/tests/test_axes.py:7812~                  | ~test_yaxis_offsetText_color~                     |
+|                       | ~/lib/matplotlib/tests/test_axes.py:7817~                  | ~test_yaxis_offsetText_color~                     |
+| ~ytick.labelsize~     | ~/lib/matplotlib/axis.py:2466~                             | ~YAxis._init~                                     |
+|                       | ~/lib/matplotlib/rcsetup.py:1122~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:7827~                  | ~test_relative_ticklabel_sizes~                   |
+|                       | ~/lib/mpl_toolkits/axes_grid1/tests/test_axes_grid1.py:70~ | ~test_twin_axes_empty_and_removed~                |
+| ~ytick.direction~     | ~/lib/matplotlib/rcsetup.py:1123~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6992~                  | ~test_tick_padding_tightbbox~                     |
+| ~ytick.minor.visible~ | ~/lib/matplotlib/axes/_base.py:1287~                       | ~_AxesBase.__clear~                               |
+|                       | ~/lib/matplotlib/colorbar.py:520~                          | ~Colorbar._draw_all~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1117~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/scale.py:110~                             | ~LinearScale.set_default_locators_and_formatters~ |
+|                       | ~/lib/matplotlib/scale.py:195~                             | ~FuncScale.set_default_locators_and_formatters~   |
+|                       | ~/lib/matplotlib/tests/test_axes.py:552~                   | ~test_minorticks_on_rcParams_both~                |
+|                       | ~/lib/matplotlib/tests/test_colorbar.py:432~               | ~test_cbar_minorticks_for_rc_xyminortickvisible~  |
+|                       | ~/lib/matplotlib/tests/test_colorbar.py:437~               | ~test_cbar_minorticks_for_rc_xyminortickvisible~  |
+|                       | ~/lib/matplotlib/tests/test_ticker.py:1532~                | ~test_minorticks_rc~                              |
+| ~ytick.major.left~    | ~/lib/matplotlib/axes/_base.py:726~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:729~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1120~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6115~                  | ~test_rc_major_minor_tick~                        |
+| ~ytick.major.right~   | ~/lib/matplotlib/axes/_base.py:727~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:731~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1121~                          | ~None~                                            |
+| ~ytick.minor.left~    | ~/lib/matplotlib/axes/_base.py:711~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:714~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1118~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:6115~                  | ~test_rc_major_minor_tick~                        |
+| ~ytick.minor.right~   | ~/lib/matplotlib/axes/_base.py:712~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/axes/_base.py:716~                        | ~_AxesBase.__init__~                              |
+|                       | ~/lib/matplotlib/rcsetup.py:1119~                          | ~None~                                            |
+| ~ytick.alignment~     | ~/lib/matplotlib/axes/_base.py:1042~                       | ~_AxesBase.get_yaxis_text1_transform~             |
+|                       | ~/lib/matplotlib/axes/_base.py:1068~                       | ~_AxesBase.get_yaxis_text2_transform~             |
+|                       | ~/lib/matplotlib/rcsetup.py:1124~                          | ~None~                                            |
+|                       | ~/lib/matplotlib/tests/test_axes.py:1758~                  | ~test_bar_tick_label_multiple_old_alignment~      |
+
+* GRIDS
+
+| ~grid.color~     | ~/lib/matplotlib/axis.py:142~                   | ~Tick.__init__~ |
+|                  | ~/lib/matplotlib/rcsetup.py:1127~               | ~None~          |
+|                  | ~/lib/mpl_toolkits/axisartist/axislines.py:436~ | ~Axes.clear~    |
+|                  | ~/lib/mpl_toolkits/mplot3d/axis3d.py:115~       | ~Axis.__init__~ |
+| ~grid.linestyle~ | ~/lib/matplotlib/axis.py:144~                   | ~Tick.__init__~ |
+|                  | ~/lib/matplotlib/rcsetup.py:1128~               | ~None~          |
+|                  | ~/lib/mpl_toolkits/axisartist/axislines.py:437~ | ~Axes.clear~    |
+|                  | ~/lib/mpl_toolkits/mplot3d/axis3d.py:117~       | ~Axis.__init__~ |
+| ~grid.linewidth~ | ~/lib/matplotlib/axis.py:146~                   | ~Tick.__init__~ |
+|                  | ~/lib/matplotlib/pyplot.py:727~                 | ~xkcd~          |
+|                  | ~/lib/matplotlib/rcsetup.py:1129~               | ~None~          |
+|                  | ~/lib/mpl_toolkits/axisartist/axislines.py:438~ | ~Axes.clear~    |
+|                  | ~/lib/mpl_toolkits/mplot3d/axis3d.py:116~       | ~Axis.__init__~ |
+| ~grid.alpha~     | ~/lib/matplotlib/axis.py:148~                   | ~Tick.__init__~ |
+|                  | ~/lib/matplotlib/axis.py:151~                   | ~Tick.__init__~ |
+|                  | ~/lib/matplotlib/axis.py:153~                   | ~Tick.__init__~ |
+|                  | ~/lib/matplotlib/rcsetup.py:1130~               | ~None~          |
+
+* LEGEND
+
+| ~legend.loc~            | ~/lib/matplotlib/legend.py:509~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1044~            | ~None~                                                 |
+|                         | ~/lib/matplotlib/tests/test_legend.py:1071~  | ~test_warn_big_data_best_loc~                          |
+|                         | ~/lib/matplotlib/tests/test_rcparams.py:599~ | ~test_rcparams_legend_loc~                             |
+| ~legend.frameon~        | ~/lib/matplotlib/legend.py:591~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1062~            | ~None~                                                 |
+| ~legend.framealpha~     | ~/lib/matplotlib/legend.py:583~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1064~            | ~None~                                                 |
+|                         | ~/lib/matplotlib/tests/test_legend.py:190~   | ~test_alpha_rcparam~                                   |
+| ~legend.facecolor~      | ~/lib/matplotlib/legend.py:565~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1080~            | ~None~                                                 |
+| ~legend.edgecolor~      | ~/lib/matplotlib/legend.py:570~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1081~            | ~None~                                                 |
+| ~legend.fancybox~       | ~/lib/matplotlib/legend.py:575~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1043~            | ~None~                                                 |
+| ~legend.shadow~         | ~/lib/matplotlib/legend.py:455~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1060~            | ~None~                                                 |
+| ~legend.numpoints~      | ~/lib/matplotlib/legend.py:445~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1051~            | ~None~                                                 |
+| ~legend.scatterpoints~  | ~/lib/matplotlib/legend.py:447~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1053~            | ~None~                                                 |
+|                         | ~/lib/matplotlib/tests/test_legend.py:229~   | ~test_rc~                                              |
+| ~legend.markerscale~    | ~/lib/matplotlib/legend.py:446~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1059~            | ~None~                                                 |
+| ~legend.fontsize~       | ~/lib/matplotlib/legend.py:426~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/legend.py:430~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/offsetbox.py:981~           | ~AnchoredOffsetbox.__init__~                           |
+|                         | ~/lib/matplotlib/offsetbox.py:985~           | ~AnchoredOffsetbox.__init__~                           |
+|                         | ~/lib/matplotlib/offsetbox.py:1381~          | ~AnnotationBbox.set_fontsize~                          |
+|                         | ~/lib/matplotlib/rcsetup.py:1054~            | ~None~                                                 |
+| ~legend.labelcolor~     | ~/lib/matplotlib/legend.py:636~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/legend.py:637~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1057~            | ~None~                                                 |
+|                         | ~/lib/matplotlib/tests/test_legend.py:955~   | ~test_legend_labelcolor_rcparam_single~                |
+|                         | ~/lib/matplotlib/tests/test_legend.py:968~   | ~test_legend_labelcolor_rcparam_linecolor~             |
+|                         | ~/lib/matplotlib/tests/test_legend.py:981~   | ~test_legend_labelcolor_rcparam_markeredgecolor~       |
+|                         | ~/lib/matplotlib/tests/test_legend.py:994~   | ~test_legend_labelcolor_rcparam_markeredgecolor_short~ |
+|                         | ~/lib/matplotlib/tests/test_legend.py:1007~  | ~test_legend_labelcolor_rcparam_markerfacecolor~       |
+|                         | ~/lib/matplotlib/tests/test_legend.py:1020~  | ~test_legend_labelcolor_rcparam_markerfacecolor_short~ |
+| ~legend.title_fontsize~ | ~/lib/matplotlib/legend.py:613~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/legend.py:618~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1055~            | ~None~                                                 |
+|                         | ~/lib/matplotlib/tests/test_legend.py:730~   | ~test_legend_title_fontprop_fontsize~                  |
+|                         | ~/lib/matplotlib/tests/test_legend.py:738~   | ~test_legend_title_fontprop_fontsize~                  |
+| ~legend.borderpad~      | ~/lib/matplotlib/legend.py:448~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1067~            | ~None~                                                 |
+| ~legend.labelspacing~   | ~/lib/matplotlib/legend.py:449~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1069~            | ~None~                                                 |
+| ~legend.handlelength~   | ~/lib/matplotlib/legend.py:450~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1071~            | ~None~                                                 |
+| ~legend.handleheight~   | ~/lib/matplotlib/legend.py:451~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1073~            | ~None~                                                 |
+| ~legend.handletextpad~  | ~/lib/matplotlib/legend.py:452~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1075~            | ~None~                                                 |
+| ~legend.borderaxespad~  | ~/lib/matplotlib/legend.py:453~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1077~            | ~None~                                                 |
+| ~legend.columnspacing~  | ~/lib/matplotlib/legend.py:454~              | ~Legend.__init__~                                      |
+|                         | ~/lib/matplotlib/rcsetup.py:1079~            | ~None~                                                 |
+
+* FIGURE
+
+| ~figure.titlesize~                 | ~/lib/matplotlib/figure.py:388~                             | ~FigureBase.suptitle~                        |
+|                                    | ~/lib/matplotlib/rcsetup.py:1134~                           | ~None~                                       |
+|                                    | ~/lib/matplotlib/tests/test_figure.py:1528~                 | ~test_rcparams~                              |
+| ~figure.titleweight~               | ~/lib/matplotlib/figure.py:388~                             | ~FigureBase.suptitle~                        |
+|                                    | ~/lib/matplotlib/rcsetup.py:1135~                           | ~None~                                       |
+|                                    | ~/lib/matplotlib/tests/test_figure.py:1527~                 | ~test_rcparams~                              |
+| ~figure.labelsize~                 | ~/lib/matplotlib/figure.py:398~                             | ~FigureBase.supxlabel~                       |
+|                                    | ~/lib/matplotlib/figure.py:408~                             | ~FigureBase.supylabel~                       |
+|                                    | ~/lib/matplotlib/rcsetup.py:1138~                           | ~None~                                       |
+|                                    | ~/lib/matplotlib/tests/test_figure.py:1526~                 | ~test_rcparams~                              |
+| ~figure.labelweight~               | ~/lib/matplotlib/figure.py:398~                             | ~FigureBase.supxlabel~                       |
+|                                    | ~/lib/matplotlib/figure.py:409~                             | ~FigureBase.supylabel~                       |
+|                                    | ~/lib/matplotlib/rcsetup.py:1139~                           | ~None~                                       |
+|                                    | ~/lib/matplotlib/tests/test_figure.py:1525~                 | ~test_rcparams~                              |
+| ~figure.figsize~                   | ~/lib/matplotlib/figure.py:2509~                            | ~Figure.__init__~                            |
+|                                    | ~/lib/matplotlib/figure.py:3584~                            | ~figaspect~                                  |
+|                                    | ~/lib/matplotlib/rcsetup.py:1142~                           | ~None~                                       |
+|                                    | ~/lib/matplotlib/tests/test_rcparams.py:107~                | ~test_rcparams_update~                       |
+|                                    | ~/lib/matplotlib/tests/test_rcparams.py:108~                | ~test_rcparams_update~                       |
+|                                    | ~/lib/matplotlib/tests/test_rcparams.py:118~                | ~test_rcparams_init~                         |
+| ~figure.dpi~                       | ~/lib/matplotlib/figure.py:2511~                            | ~Figure.__init__~                            |
+|                                    | ~/lib/matplotlib/rcsetup.py:1143~                           | ~None~                                       |
+|                                    | ~/lib/matplotlib/tests/test_backend_qt.py:449~              | ~test_double_resize~                         |
+|                                    | ~/lib/matplotlib/tests/test_backend_qt.py:450~              | ~test_double_resize~                         |
+|                                    | ~/lib/matplotlib/tests/test_patches.py:550~                 | ~test_connection_patch_fig~                  |
+| ~figure.facecolor~                 | ~/lib/matplotlib/backends/web_backend/nbagg_uat.ipynb:378~  | ~None~                                       |
+|                                    | ~/lib/matplotlib/figure.py:2513~                            | ~Figure.__init__~                            |
+|                                    | ~/lib/matplotlib/image.py:1685~                             | ~imsave~                                     |
+|                                    | ~/lib/matplotlib/pyplot.py:726~                             | ~xkcd~                                       |
+|                                    | ~/lib/matplotlib/rcsetup.py:1144~                           | ~None~                                       |
+| ~figure.edgecolor~                 | ~/lib/matplotlib/figure.py:2175~                            | ~SubFigure.__init__~                         |
+|                                    | ~/lib/matplotlib/figure.py:2515~                            | ~Figure.__init__~                            |
+|                                    | ~/lib/matplotlib/rcsetup.py:1145~                           | ~None~                                       |
+| ~figure.frameon~                   | ~/lib/matplotlib/figure.py:2177~                            | ~SubFigure.__init__~                         |
+|                                    | ~/lib/matplotlib/figure.py:2517~                            | ~Figure.__init__~                            |
+|                                    | ~/lib/matplotlib/rcsetup.py:1146~                           | ~None~                                       |
+| ~figure.max_open_warning~          | ~/lib/matplotlib/pyplot.py:887~                             | ~figure~                                     |
+|                                    | ~/lib/matplotlib/rcsetup.py:1148~                           | ~None~                                       |
+|                                    | ~/lib/matplotlib/style/core.py:44~                          | ~None~                                       |
+|                                    | ~/lib/matplotlib/tests/test_figure.py:322~                  | ~test_too_many_figures~                      |
+| ~figure.raise_window~              |                                                             |                                              |
+| ~figure.subplot.left~              | ~/lib/matplotlib/rcsetup.py:1151~                           | ~None~                                       |
+|                                    | ~/lib/matplotlib/tests/test_backend_pgf.py:118~             | ~test_rcupdate~                              |
+|                                    | ~/lib/matplotlib/tests/test_backend_pgf.py:124~             | ~test_rcupdate~                              |
+| ~figure.subplot.right~             | ~/lib/matplotlib/rcsetup.py:1152~                           | ~None~                                       |
+| ~figure.subplot.bottom~            | ~/lib/matplotlib/rcsetup.py:1153~                           | ~None~                                       |
+| ~figure.subplot.top~               | ~/lib/matplotlib/rcsetup.py:1154~                           | ~None~                                       |
+| ~figure.subplot.wspace~            | ~/lib/matplotlib/gridspec.py:513~                           | ~GridSpecFromSubplotSpec.get_subplot_params~ |
+|                                    | ~/lib/matplotlib/rcsetup.py:1155~                           | ~None~                                       |
+|                                    | ~/lib/mpl_toolkits/axes_grid1/axes_divider.py:444~          | ~AxesDivider.new_horizontal~                 |
+|                                    | ~/lib/mpl_toolkits/axes_grid1/tests/test_axes_grid1.py:375~ | ~test_axes_locatable_position~               |
+| ~figure.subplot.hspace~            | ~/lib/matplotlib/gridspec.py:510~                           | ~GridSpecFromSubplotSpec.get_subplot_params~ |
+|                                    | ~/lib/matplotlib/rcsetup.py:1156~                           | ~None~                                       |
+|                                    | ~/lib/mpl_toolkits/axes_grid1/axes_divider.py:469~          | ~AxesDivider.new_vertical~                   |
+| ~figure.autolayout~                | ~/lib/matplotlib/figure.py:2604~                            | ~Figure.set_layout_engine~                   |
+|                                    | ~/lib/matplotlib/figure.py:2766~                            | ~Figure.set_tight_layout~                    |
+|                                    | ~/lib/matplotlib/rcsetup.py:1147~                           | ~None~                                       |
+|                                    | ~/lib/matplotlib/tests/test_figure.py:665~                  | ~test_tightlayout_autolayout_deconflict~     |
+| ~figure.constrained_layout.use~    | ~/lib/matplotlib/figure.py:2606~                            | ~Figure.set_layout_engine~                   |
+|                                    | ~/lib/matplotlib/figure.py:2803~                            | ~Figure.set_constrained_layout~              |
+|                                    | ~/lib/matplotlib/rcsetup.py:1158~                           | ~None~                                       |
+|                                    | ~/lib/matplotlib/tests/test_bbox_tight.py:170~              | ~test_bbox_inches_fixed_aspect~              |
+|                                    | ~/lib/matplotlib/tests/test_constrainedlayout.py:295~       | ~test_constrained_layout15~                  |
+| ~figure.constrained_layout.h_pad~  | ~/lib/matplotlib/layout_engine.py:231~                      | ~ConstrainedLayoutEngine.__init__~           |
+|                                    | ~/lib/matplotlib/rcsetup.py:1164~                           | ~None~                                       |
+| ~figure.constrained_layout.w_pad~  | ~/lib/matplotlib/layout_engine.py:230~                      | ~ConstrainedLayoutEngine.__init__~           |
+|                                    | ~/lib/matplotlib/rcsetup.py:1165~                           | ~None~                                       |
+| ~figure.constrained_layout.hspace~ | ~/lib/matplotlib/layout_engine.py:233~                      | ~ConstrainedLayoutEngine.__init__~           |
+|                                    | ~/lib/matplotlib/rcsetup.py:1161~                           | ~None~                                       |
+| ~figure.constrained_layout.wspace~ | ~/lib/matplotlib/layout_engine.py:232~                      | ~ConstrainedLayoutEngine.__init__~           |
+|                                    | ~/lib/matplotlib/rcsetup.py:1162~                           | ~None~                                       |
+
+* IMAGES
+
+| ~image.aspect~          | ~/lib/matplotlib/axes/_axes.py:5649~             | ~Axes.imshow~                                |
+|                         | ~/lib/matplotlib/rcsetup.py:947~                 | ~None~                                       |
+| ~image.interpolation~   | ~/lib/matplotlib/image.py:777~                   | ~_ImageBase.set_interpolation~               |
+|                         | ~/lib/matplotlib/rcsetup.py:948~                 | ~None~                                       |
+|                         | ~/lib/matplotlib/tests/test_axes.py:1017~        | ~test_imshow~                                |
+|                         | ~/lib/matplotlib/tests/test_axes.py:1041~        | ~test_imshow_clip~                           |
+|                         | ~/lib/matplotlib/tests/test_axes.py:4997~        | ~test_specgram~                              |
+|                         | ~/lib/matplotlib/tests/test_axes.py:5033~        | ~test_specgram_magnitude~                    |
+|                         | ~/lib/matplotlib/tests/test_axes.py:5070~        | ~test_specgram_angle~                        |
+|                         | ~/lib/matplotlib/tests/test_image.py:967~        | ~test_imshow_bignumbers~                     |
+|                         | ~/lib/matplotlib/tests/test_image.py:979~        | ~test_imshow_bignumbers_real~                |
+| ~image.cmap~            | ~/lib/matplotlib/cm.py:200~                      | ~ColormapRegistry.get_cmap~                  |
+|                         | ~/lib/matplotlib/cm.py:285~                      | ~_get_cmap~                                  |
+|                         | ~/lib/matplotlib/cm.py:719~                      | ~_ensure_cmap~                               |
+|                         | ~/lib/matplotlib/rcsetup.py:949~                 | ~None~                                       |
+|                         | ~/lib/matplotlib/tests/test_colors.py:128~       | ~test_colormaps_get_cmap~                    |
+|                         | ~/lib/matplotlib/tests/test_style.py:14~         | ~None~                                       |
+| ~image.lut~             | ~/lib/matplotlib/cm.py:29~                       | ~None~                                       |
+|                         | ~/lib/matplotlib/rcsetup.py:950~                 | ~None~                                       |
+| ~image.origin~          | ~/lib/matplotlib/contour.py:758~                 | ~ContourSet.__init__~                        |
+|                         | ~/lib/matplotlib/image.py:262~                   | ~_ImageBase.__init__~                        |
+|                         | ~/lib/matplotlib/image.py:1640~                  | ~imsave~                                     |
+|                         | ~/lib/matplotlib/rcsetup.py:951~                 | ~None~                                       |
+|                         | ~/lib/matplotlib/tests/test_axes.py:5113~        | ~test_specgram_origin_rcparam~               |
+|                         | ~/lib/matplotlib/tests/test_axes.py:5119~        | ~test_specgram_origin_rcparam~               |
+| ~image.resample~        | ~/lib/matplotlib/image.py:817~                   | ~_ImageBase.set_resample~                    |
+|                         | ~/lib/matplotlib/rcsetup.py:952~                 | ~None~                                       |
+| ~image.composite_image~ | ~/lib/matplotlib/backend_bases.py:497~           | ~RendererBase.option_image_nocomposite~      |
+|                         | ~/lib/matplotlib/backends/_backend_pdf_ps.py:98~ | ~RendererPDFPSBase.option_image_nocomposite~ |
+|                         | ~/lib/matplotlib/backends/backend_pgf.py:606~    | ~RendererPgf.option_image_nocomposite~       |
+|                         | ~/lib/matplotlib/backends/backend_svg.py:647~    | ~RendererSVG.option_image_nocomposite~       |
+|                         | ~/lib/matplotlib/rcsetup.py:955~                 | ~None~                                       |
+|                         | ~/lib/matplotlib/tests/test_backend_pdf.py:124~  | ~test_composite_image~                       |
+|                         | ~/lib/matplotlib/tests/test_backend_pdf.py:128~  | ~test_composite_image~                       |
+|                         | ~/lib/matplotlib/tests/test_image.py:1047~       | ~test_composite~                             |
+
+* CONTOUR PLOTS
+
+| ~contour.negative_linestyle~ | ~/lib/matplotlib/contour.py:767~            | ~ContourSet.__init__~            |
+|                              | ~/lib/matplotlib/rcsetup.py:958~            | ~None~                           |
+|                              | ~/lib/matplotlib/tests/test_contour.py:665~ | ~test_negative_linestyles~       |
+| ~contour.corner_mask~        | ~/lib/matplotlib/contour.py:1406~           | ~QuadContourSet._process_args~   |
+|                              | ~/lib/matplotlib/rcsetup.py:959~            | ~None~                           |
+| ~contour.linewidth~          | ~/lib/matplotlib/contour.py:1229~           | ~ContourSet._process_linewidths~ |
+|                              | ~/lib/matplotlib/rcsetup.py:960~            | ~None~                           |
+|                              | ~/lib/matplotlib/tests/test_contour.py:365~ | ~test_contour_linewidth~         |
+| ~contour.algorithm~          | ~/lib/matplotlib/contour.py:1396~           | ~QuadContourSet._process_args~   |
+|                              | ~/lib/matplotlib/contour.py:1397~           | ~QuadContourSet._process_args~   |
+|                              | ~/lib/matplotlib/rcsetup.py:961~            | ~None~                           |
+
+* ERRORBAR PLOTS
+
+| ~errorbar.capsize~ | ~/lib/matplotlib/axes/_axes.py:2371~       | ~Axes.bar~        |
+|                    | ~/lib/matplotlib/axes/_axes.py:3575~       | ~Axes.errorbar~   |
+|                    | ~/lib/matplotlib/rcsetup.py:964~           | ~None~            |
+|                    | ~/lib/mpl_toolkits/mplot3d/axes3d.py:3028~ | ~Axes3D.errorbar~ |
+
+* HISTOGRAM PLOTS
+
+| ~hist.bins~ | ~/lib/matplotlib/axes/_axes.py:6681~ | ~Axes.hist~          |
+|             | ~/lib/matplotlib/rcsetup.py:792~     | ~validate_hist_bins~ |
+|             | ~/lib/matplotlib/rcsetup.py:864~     | ~None~               |
+
+* SCATTER PLOTS
+
+| ~scatter.marker~     | ~/lib/matplotlib/axes/_axes.py:4613~ | ~Axes.scatter~                   |
+|                      | ~/lib/matplotlib/rcsetup.py:1026~    | ~None~                           |
+| ~scatter.edgecolors~ | ~/lib/matplotlib/axes/_axes.py:4367~ | ~Axes._parse_scatter_color_args~ |
+|                      | ~/lib/matplotlib/rcsetup.py:1027~    | ~None~                           |
+
+* AGG RENDERING
+
+| ~agg.path.chunksize~ | ~/lib/matplotlib/backends/backend_agg.py:111~ | ~RendererAgg.draw_path~ |
+|                      | ~/lib/matplotlib/backends/backend_agg.py:136~ | ~RendererAgg.draw_path~ |
+|                      | ~/lib/matplotlib/backends/backend_agg.py:176~ | ~RendererAgg.draw_path~ |
+|                      | ~/lib/matplotlib/backends/backend_agg.py:182~ | ~RendererAgg.draw_path~ |
+|                      | ~/lib/matplotlib/rcsetup.py:1213~             | ~None~                  |
+|                      | ~/lib/matplotlib/tests/test_agg.py:218~       | ~test_chunksize~        |
+|                      | ~/lib/matplotlib/tests/test_agg.py:314~       | ~test_chunksize_fails~  |
+|                      | ~/lib/matplotlib/tests/test_agg.py:319~       | ~test_chunksize_fails~  |
+|                      | ~/lib/matplotlib/tests/test_agg.py:324~       | ~test_chunksize_fails~  |
+
+* PATHS
+
+| ~path.simplify~           | ~/lib/matplotlib/path.py:206~                      | ~Path._update_values~                      |
+|                           | ~/lib/matplotlib/rcsetup.py:1208~                  | ~None~                                     |
+|                           | ~/lib/matplotlib/tests/test_simplification.py:457~ | ~test_throw_rendering_complexity_exceeded~ |
+| ~path.simplify_threshold~ | ~/lib/matplotlib/backends/backend_agg.py:138~      | ~RendererAgg.draw_path~                    |
+|                           | ~/lib/matplotlib/backends/backend_agg.py:139~      | ~RendererAgg.draw_path~                    |
+|                           | ~/lib/matplotlib/backends/backend_agg.py:167~      | ~RendererAgg.draw_path~                    |
+|                           | ~/lib/matplotlib/backends/backend_agg.py:168~      | ~RendererAgg.draw_path~                    |
+|                           | ~/lib/matplotlib/path.py:187~                      | ~Path._fast_from_codes_and_verts~          |
+|                           | ~/lib/matplotlib/path.py:203~                      | ~Path._update_values~                      |
+|                           | ~/lib/matplotlib/rcsetup.py:1209~                  | ~None~                                     |
+| ~path.snap~               | ~/lib/matplotlib/artist.py:632~                    | ~Artist.get_snap~                          |
+|                           | ~/lib/matplotlib/rcsetup.py:1210~                  | ~None~                                     |
+| ~path.sketch~             | ~/lib/matplotlib/artist.py:211~                    | ~Artist.__init__~                          |
+|                           | ~/lib/matplotlib/pyplot.py:721~                    | ~xkcd~                                     |
+|                           | ~/lib/matplotlib/rcsetup.py:1211~                  | ~None~                                     |
+|                           | ~/lib/matplotlib/tests/test_style.py:166~          | ~test_xkcd_no_cm~                          |
+|                           | ~/lib/matplotlib/tests/test_style.py:168~          | ~test_xkcd_no_cm~                          |
+|                           | ~/lib/matplotlib/tests/test_style.py:170~          | ~test_xkcd_no_cm~                          |
+|                           | ~/lib/matplotlib/tests/test_style.py:174~          | ~test_xkcd_cm~                             |
+|                           | ~/lib/matplotlib/tests/test_style.py:176~          | ~test_xkcd_cm~                             |
+|                           | ~/lib/matplotlib/tests/test_style.py:177~          | ~test_xkcd_cm~                             |
+| ~path.effects~            | ~/lib/matplotlib/artist.py:212~                    | ~Artist.__init__~                          |
+|                           | ~/lib/matplotlib/pyplot.py:722~                    | ~xkcd~                                     |
+|                           | ~/lib/matplotlib/rcsetup.py:1212~                  | ~None~                                     |
+|                           | ~/lib/matplotlib/tests/test_backend_ps.py:85~      | ~test_patheffects~                         |
+
+* SAVING FIGURES
+
+| ~savefig.dpi~         | ~/lib/matplotlib/animation.py:1016~                        | ~Animation.save~                           |
+|                       | ~/lib/matplotlib/backend_bases.py:2116~                    | ~FigureCanvasBase.print_figure~            |
+|                       | ~/lib/matplotlib/figure.py:3325~                           | ~Figure.savefig~                           |
+|                       | ~/lib/matplotlib/rcsetup.py:1168~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_image.py:68~                   | ~test_interp_nearest_vs_none~              |
+|                       | ~/lib/matplotlib/tests/test_image.py:115~                  | ~test_imshow_antialiased~                  |
+|                       | ~/lib/matplotlib/tests/test_image.py:131~                  | ~test_imshow_zoom~                         |
+|                       | ~/lib/matplotlib/tests/test_image.py:546~                  | ~test_rasterize_dpi~                       |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:402~               | ~test_genfrac_displaystyle~                |
+|                       | ~/lib/matplotlib/tests/test_patches.py:550~                | ~test_connection_patch_fig~                |
+|                       | ~/lib/matplotlib/tests/test_patches.py:614~                | ~test_shadow~                              |
+|                       | ~/lib/matplotlib/texmanager.py:328~                        | ~TexManager.get_grey~                      |
+| ~savefig.facecolor~   | ~/lib/matplotlib/animation.py:1060~                        | ~Animation.save~                           |
+|                       | ~/lib/matplotlib/backends/backend_agg.py:526~              | ~FigureCanvasAgg.print_jpg~                |
+|                       | ~/lib/matplotlib/backends/web_backend/nbagg_uat.ipynb:379~ | ~None~                                     |
+|                       | ~/lib/matplotlib/image.py:1683~                            | ~imsave~                                   |
+|                       | ~/lib/matplotlib/rcsetup.py:1169~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_animation.py:74~               | ~test_null_movie_writer~                   |
+| ~savefig.edgecolor~   | ~/lib/matplotlib/rcsetup.py:1170~                          | ~None~                                     |
+| ~savefig.format~      | ~/lib/matplotlib/backend_bases.py:2202~                    | ~FigureCanvasBase.get_default_filetype~    |
+|                       | ~/lib/matplotlib/image.py:1625~                            | ~imsave~                                   |
+|                       | ~/lib/matplotlib/rcsetup.py:1172~                          | ~None~                                     |
+| ~savefig.bbox~        | ~/lib/matplotlib/animation.py:1054~                        | ~Animation.save~                           |
+|                       | ~/lib/matplotlib/animation.py:1073~                        | ~Animation.save~                           |
+|                       | ~/lib/matplotlib/backend_bases.py:2137~                    | ~FigureCanvasBase.print_figure~            |
+|                       | ~/lib/matplotlib/rcsetup.py:1173~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_spines.py:143~                 | ~test_spines_black_axes~                   |
+| ~savefig.pad_inches~  | ~/lib/matplotlib/backend_bases.py:2162~                    | ~FigureCanvasBase.print_figure~            |
+|                       | ~/lib/matplotlib/rcsetup.py:1174~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_spines.py:142~                 | ~test_spines_black_axes~                   |
+| ~savefig.directory~   | ~/lib/matplotlib/backends/_backend_tk.py:857~              | ~NavigationToolbar2Tk.save_figure~         |
+|                       | ~/lib/matplotlib/backends/_backend_tk.py:876~              | ~NavigationToolbar2Tk.save_figure~         |
+|                       | ~/lib/matplotlib/backends/backend_gtk3.py:364~             | ~NavigationToolbar2GTK3.save_figure~       |
+|                       | ~/lib/matplotlib/backends/backend_gtk3.py:376~             | ~NavigationToolbar2GTK3.save_figure~       |
+|                       | ~/lib/matplotlib/backends/backend_gtk3.py:377~             | ~NavigationToolbar2GTK3.save_figure~       |
+|                       | ~/lib/matplotlib/backends/backend_gtk4.py:367~             | ~NavigationToolbar2GTK4.save_figure~       |
+|                       | ~/lib/matplotlib/backends/backend_gtk4.py:380~             | ~NavigationToolbar2GTK4.save_figure~       |
+|                       | ~/lib/matplotlib/backends/backend_gtk4.py:382~             | ~NavigationToolbar2GTK4.save_figure~       |
+|                       | ~/lib/matplotlib/backends/backend_macosx.py:122~           | ~NavigationToolbar2Mac.save_figure~        |
+|                       | ~/lib/matplotlib/backends/backend_macosx.py:129~           | ~NavigationToolbar2Mac.save_figure~        |
+|                       | ~/lib/matplotlib/backends/backend_macosx.py:130~           | ~NavigationToolbar2Mac.save_figure~        |
+|                       | ~/lib/matplotlib/backends/backend_qt.py:773~               | ~NavigationToolbar2QT.save_figure~         |
+|                       | ~/lib/matplotlib/backends/backend_qt.py:791~               | ~NavigationToolbar2QT.save_figure~         |
+|                       | ~/lib/matplotlib/backends/backend_wx.py:1106~              | ~NavigationToolbar2Wx.save_figure~         |
+|                       | ~/lib/matplotlib/backends/backend_wx.py:1122~              | ~NavigationToolbar2Wx.save_figure~         |
+|                       | ~/lib/matplotlib/backends/backend_wx.py:1123~              | ~NavigationToolbar2Wx.save_figure~         |
+|                       | ~/lib/matplotlib/rcsetup.py:1176~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/style/core.py:45~                         | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_macosx.py:38~          | ~test_savefig_rcparam~                     |
+|                       | ~/lib/matplotlib/tests/test_backend_macosx.py:46~          | ~test_savefig_rcparam~                     |
+| ~savefig.transparent~ | ~/lib/matplotlib/figure.py:3327~                           | ~Figure.savefig~                           |
+|                       | ~/lib/matplotlib/rcsetup.py:1177~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_figure.py:568~                 | ~None~                                     |
+| ~savefig.orientation~ | ~/lib/matplotlib/rcsetup.py:1171~                          | ~None~                                     |
+| ~tk.window_focus~     | ~/lib/matplotlib/backends/_backend_tk.py:46~               | ~_restore_foreground_window_at_end~        |
+|                       | ~/lib/matplotlib/rcsetup.py:1179~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/style/core.py:45~                         | ~None~                                     |
+| ~ps.papersize~        | ~/lib/matplotlib/backends/backend_ps.py:837~               | ~FigureCanvasPS._print_ps~                 |
+|                       | ~/lib/matplotlib/rcsetup.py:1182~                          | ~None~                                     |
+| ~ps.useafm~           | ~/lib/matplotlib/backends/backend_ps.py:250~               | ~None~                                     |
+|                       | ~/lib/matplotlib/backends/backend_ps.py:621~               | ~RendererPS.draw_text~                     |
+|                       | ~/lib/matplotlib/backends/backend_ps.py:925~               | ~FigureCanvasPS._print_figure~             |
+|                       | ~/lib/matplotlib/backends/backend_ps.py:930~               | ~FigureCanvasPS._print_figure~             |
+|                       | ~/lib/matplotlib/rcsetup.py:1185~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:31~              | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:62~              | ~test_savefig_to_stringio~                 |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:181~             | ~test_useafm~                              |
+| ~ps.usedistiller~     | ~/lib/matplotlib/backends/backend_ps.py:875~               | ~FigureCanvasPS._print_figure~             |
+|                       | ~/lib/matplotlib/backends/backend_ps.py:967~               | ~FigureCanvasPS._print_figure~             |
+|                       | ~/lib/matplotlib/backends/backend_ps.py:974~               | ~FigureCanvasPS._print_figure~             |
+|                       | ~/lib/matplotlib/backends/backend_ps.py:977~               | ~FigureCanvasPS._print_figure~             |
+|                       | ~/lib/matplotlib/backends/backend_ps.py:1064~              | ~FigureCanvasPS._print_figure_tex~         |
+|                       | ~/lib/matplotlib/backends/backend_ps.py:1069~              | ~FigureCanvasPS._print_figure_tex~         |
+|                       | ~/lib/matplotlib/rcsetup.py:438~                           | ~validate_ps_distiller~                    |
+|                       | ~/lib/matplotlib/rcsetup.py:1187~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:27~              | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:28~              | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:58~              | ~test_savefig_to_stringio~                 |
+| ~ps.distiller.res~    | ~/lib/matplotlib/backends/backend_ps.py:1153~              | ~gs_distill~                               |
+|                       | ~/lib/matplotlib/rcsetup.py:1188~                          | ~None~                                     |
+| ~ps.fonttype~         | ~/lib/matplotlib/backends/backend_ps.py:935~               | ~FigureCanvasPS._print_figure~             |
+|                       | ~/lib/matplotlib/rcsetup.py:1189~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:227~             | ~test_type42_font_without_prep~            |
+|                       | ~/lib/matplotlib/tests/test_backend_ps.py:235~             | ~test_fonttype~                            |
+| ~pdf.compression~     | ~/lib/matplotlib/backends/backend_pdf.py:560~              | ~Stream.__init__~                          |
+|                       | ~/lib/matplotlib/backends/backend_pdf.py:562~              | ~Stream.__init__~                          |
+|                       | ~/lib/matplotlib/backends/backend_pdf.py:574~              | ~Stream._writeHeader~                      |
+|                       | ~/lib/matplotlib/backends/backend_pdf.py:1738~             | ~PdfFile._writeImg~                        |
+|                       | ~/lib/matplotlib/rcsetup.py:1190~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_pdf.py:31~             | ~test_use14corefonts~                      |
+| ~pdf.fonttype~        | ~/lib/matplotlib/backends/backend_pdf.py:1141~             | ~PdfFile.embedTTF~                         |
+|                       | ~/lib/matplotlib/backends/backend_pdf.py:2193~             | ~RendererPdf.draw_mathtext~                |
+|                       | ~/lib/matplotlib/backends/backend_pdf.py:2343~             | ~RendererPdf.draw_text~                    |
+|                       | ~/lib/matplotlib/rcsetup.py:1194~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_pdf.py:54~             | ~test_embed_fonts~                         |
+|                       | ~/lib/matplotlib/tests/test_text.py:532~                   | ~test_font_scaling~                        |
+|                       | ~/lib/matplotlib/tests/test_text.py:832~                   | ~test_pdf_font42_kerning~                  |
+|                       | ~/lib/matplotlib/tests/test_text.py:839~                   | ~test_pdf_chars_beyond_bmp~                |
+|                       | ~/lib/matplotlib/tests/test_ttconv.py:12~                  | ~test_truetype_conversion~                 |
+| ~pdf.use14corefonts~  | ~/lib/matplotlib/backends/backend_pdf.py:903~              | ~PdfFile.fontName~                         |
+|                       | ~/lib/matplotlib/backends/backend_pdf.py:1942~             | ~None~                                     |
+|                       | ~/lib/matplotlib/backends/backend_pdf.py:2337~             | ~RendererPdf.draw_text~                    |
+|                       | ~/lib/matplotlib/rcsetup.py:1193~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_pdf.py:27~             | ~test_use14corefonts~                      |
+| ~pdf.inheritcolor~    | ~/lib/matplotlib/backends/backend_pdf.py:2526~             | ~GraphicsContextPdf.rgb_cmd~               |
+|                       | ~/lib/matplotlib/backends/backend_pdf.py:2534~             | ~GraphicsContextPdf.fillcolor_cmd~         |
+|                       | ~/lib/matplotlib/rcsetup.py:1191~                          | ~None~                                     |
+| ~svg.image_inline~    | ~/lib/matplotlib/backends/backend_svg.py:941~              | ~RendererSVG.draw_image~                   |
+|                       | ~/lib/matplotlib/rcsetup.py:1201~                          | ~None~                                     |
+| ~svg.fonttype~        | ~/lib/matplotlib/backends/backend_svg.py:1265~             | ~RendererSVG.draw_text~                    |
+|                       | ~/lib/matplotlib/rcsetup.py:1202~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_svg.py:80~             | ~test_bold_font_output_with_none_fonttype~ |
+|                       | ~/lib/matplotlib/tests/test_backend_svg.py:223~            | ~test_svgnone_with_data_coordinates~       |
+|                       | ~/lib/matplotlib/tests/test_backend_svg.py:580~            | ~test_svg_font_string~                     |
+|                       | ~/lib/matplotlib/tests/test_colorbar.py:1082~              | ~test_nonorm~                              |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:226~               | ~test_mathtext_rendering_svgastext~        |
+|                       | ~/lib/matplotlib/tests/test_mathtext.py:424~               | ~test_mathtext_fallback~                   |
+|                       | ~/lib/matplotlib/tests/test_rcparams.py:138~               | ~test_Bug_2543~                            |
+|                       | ~/lib/matplotlib/tests/test_text.py:637~                   | ~test_text_as_text_opacity~                |
+| ~svg.hashsalt~        | ~/lib/matplotlib/backends/backend_svg.py:466~              | ~RendererSVG._make_id~                     |
+|                       | ~/lib/matplotlib/rcsetup.py:1203~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/testing/__init__.py:25~                   | ~set_reproducibility_for_testing~          |
+|                       | ~/lib/matplotlib/tests/test_determinism.py:19~             | ~_save_figure~                             |
+|                       | ~/lib/matplotlib/tests/test_rcparams.py:582~               | ~test_deprecation~                         |
+|                       | ~/lib/matplotlib/tests/test_rcparams.py:585~               | ~test_deprecation~                         |
+|                       | ~/lib/matplotlib/tests/test_rcparams.py:586~               | ~test_deprecation~                         |
+|                       | ~/lib/matplotlib/tests/test_rcparams.py:587~               | ~test_deprecation~                         |
+| ~pgf.rcfonts~         | ~/lib/matplotlib/backends/backend_pgf.py:48~               | ~_get_preamble~                            |
+|                       | ~/lib/matplotlib/rcsetup.py:1197~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:81~             | ~test_xelatex~                             |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:102~            | ~test_pdflatex~                            |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:120~            | ~test_rcupdate~                            |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:126~            | ~test_rcupdate~                            |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:148~            | ~test_pathclip~                            |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:167~            | ~test_mixedmode~                           |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:177~            | ~test_bbox_inches~                         |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:197~            | ~test_pdf_pages~                           |
+| ~pgf.preamble~        | ~/lib/matplotlib/backends/backend_pgf.py:44~               | ~_get_preamble~                            |
+|                       | ~/lib/matplotlib/rcsetup.py:1198~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:104~            | ~test_pdflatex~                            |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:128~            | ~test_rcupdate~                            |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:135~            | ~test_rcupdate~                            |
+| ~pgf.texsystem~       | ~/lib/matplotlib/backends/backend_pgf.py:46~               | ~_get_preamble~                            |
+|                       | ~/lib/matplotlib/backends/backend_pgf.py:98~               | ~_escape_and_apply_props~                  |
+|                       | ~/lib/matplotlib/backends/backend_pgf.py:191~              | ~LatexManager._build_latex_header~         |
+|                       | ~/lib/matplotlib/backends/backend_pgf.py:249~              | ~LatexManager.__init__~                    |
+|                       | ~/lib/matplotlib/backends/backend_pgf.py:272~              | ~LatexManager._setup_latex_process~        |
+|                       | ~/lib/matplotlib/backends/backend_pgf.py:824~              | ~FigureCanvasPgf.print_pdf~                |
+|                       | ~/lib/matplotlib/backends/backend_pgf.py:953~              | ~PdfPages._run_latex~                      |
+|                       | ~/lib/matplotlib/rcsetup.py:1196~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:103~            | ~test_pdflatex~                            |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:121~            | ~test_rcupdate~                            |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:127~            | ~test_rcupdate~                            |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:198~            | ~test_pdf_pages~                           |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:242~            | ~test_pdf_pages_metadata_check~            |
+|                       | ~/lib/matplotlib/tests/test_backend_pgf.py:331~            | ~test_minus_signs_with_tex~                |
+| ~docstring.hardcopy~  | ~/lib/matplotlib/artist.py:1853~                           | ~kwdoc~                                    |
+|                       | ~/lib/matplotlib/rcsetup.py:1206~                          | ~None~                                     |
+|                       | ~/lib/matplotlib/style/core.py:46~                         | ~None~                                     |
+
+* INTERACTIVE KEYMAPS
+
+| ~keymap.fullscreen~ | ~/lib/matplotlib/backend_bases.py:2408~ | ~key_press_handler~     |
+|                     | ~/lib/matplotlib/backend_tools.py:415~  | ~None~                  |
+|                     | ~/lib/matplotlib/rcsetup.py:1216~       | ~None~                  |
+| ~keymap.home~       | ~/lib/matplotlib/backend_bases.py:2409~ | ~key_press_handler~     |
+|                     | ~/lib/matplotlib/backend_tools.py:606~  | ~None~                  |
+|                     | ~/lib/matplotlib/rcsetup.py:1217~       | ~None~                  |
+| ~keymap.back~       | ~/lib/matplotlib/backend_bases.py:2410~ | ~key_press_handler~     |
+|                     | ~/lib/matplotlib/backend_bases.py:2554~ | ~button_press_handler~  |
+|                     | ~/lib/matplotlib/backend_tools.py:615~  | ~None~                  |
+|                     | ~/lib/matplotlib/rcsetup.py:1218~       | ~None~                  |
+| ~keymap.forward~    | ~/lib/matplotlib/backend_bases.py:2411~ | ~key_press_handler~     |
+|                     | ~/lib/matplotlib/backend_bases.py:2556~ | ~button_press_handler~  |
+|                     | ~/lib/matplotlib/backend_tools.py:624~  | ~None~                  |
+|                     | ~/lib/matplotlib/rcsetup.py:1219~       | ~None~                  |
+| ~keymap.pan~        | ~/lib/matplotlib/backend_bases.py:2412~ | ~key_press_handler~     |
+|                     | ~/lib/matplotlib/backend_tools.py:834~  | ~None~                  |
+|                     | ~/lib/matplotlib/rcsetup.py:1220~       | ~None~                  |
+| ~keymap.zoom~       | ~/lib/matplotlib/backend_bases.py:2413~ | ~key_press_handler~     |
+|                     | ~/lib/matplotlib/backend_tools.py:715~  | ~None~                  |
+|                     | ~/lib/matplotlib/rcsetup.py:1221~       | ~None~                  |
+| ~keymap.save~       | ~/lib/matplotlib/backend_bases.py:2414~ | ~key_press_handler~     |
+|                     | ~/lib/matplotlib/backend_tools.py:640~  | ~None~                  |
+|                     | ~/lib/matplotlib/rcsetup.py:1222~       | ~None~                  |
+| ~keymap.help~       | ~/lib/matplotlib/backend_tools.py:899~  | ~None~                  |
+|                     | ~/lib/matplotlib/rcsetup.py:1229~       | ~None~                  |
+| ~keymap.quit~       | ~/lib/matplotlib/backend_bases.py:2415~ | ~key_press_handler~     |
+|                     | ~/lib/matplotlib/backend_tools.py:365~  | ~None~                  |
+|                     | ~/lib/matplotlib/rcsetup.py:1223~       | ~None~                  |
+| ~keymap.quit_all~   | ~/lib/matplotlib/backend_bases.py:2416~ | ~key_press_handler~     |
+|                     | ~/lib/matplotlib/backend_tools.py:375~  | ~None~                  |
+|                     | ~/lib/matplotlib/rcsetup.py:1224~       | ~None~                  |
+| ~keymap.grid~       | ~/lib/matplotlib/backend_bases.py:2417~ | ~key_press_handler~     |
+|                     | ~/lib/matplotlib/backend_tools.py:385~  | ~None~                  |
+|                     | ~/lib/matplotlib/backend_tools.py:392~  | ~ToolGrid.trigger~      |
+|                     | ~/lib/matplotlib/rcsetup.py:1225~       | ~None~                  |
+| ~keymap.grid_minor~ | ~/lib/matplotlib/backend_bases.py:2418~ | ~key_press_handler~     |
+|                     | ~/lib/matplotlib/backend_tools.py:400~  | ~None~                  |
+|                     | ~/lib/matplotlib/backend_tools.py:407~  | ~ToolMinorGrid.trigger~ |
+|                     | ~/lib/matplotlib/rcsetup.py:1226~       | ~None~                  |
+| ~keymap.yscale~     | ~/lib/matplotlib/backend_bases.py:2419~ | ~key_press_handler~     |
+|                     | ~/lib/matplotlib/backend_tools.py:442~  | ~None~                  |
+|                     | ~/lib/matplotlib/rcsetup.py:1227~       | ~None~                  |
+| ~keymap.xscale~     | ~/lib/matplotlib/backend_bases.py:2420~ | ~key_press_handler~     |
+|                     | ~/lib/matplotlib/backend_tools.py:452~  | ~None~                  |
+|                     | ~/lib/matplotlib/rcsetup.py:1228~       | ~None~                  |
+| ~keymap.copy~       | ~/lib/matplotlib/backend_tools.py:939~  | ~None~                  |
+|                     | ~/lib/matplotlib/rcsetup.py:1230~       | ~None~                  |
+
+* ANIMATION
+
+| ~animation.html~         | ~/lib/matplotlib/animation.py:1347~           | ~Animation._repr_html_~         |
+|                          | ~/lib/matplotlib/rcsetup.py:1233~             | ~None~                          |
+|                          | ~/lib/matplotlib/tests/test_animation.py:226~ | ~test_animation_repr_html~      |
+| ~animation.writer~       | ~/lib/matplotlib/animation.py:993~            | ~Animation.save~                |
+|                          | ~/lib/matplotlib/animation.py:1272~           | ~Animation.to_html5_video~      |
+|                          | ~/lib/matplotlib/rcsetup.py:1237~             | ~None~                          |
+|                          | ~/lib/matplotlib/tests/test_animation.py:225~ | ~test_animation_repr_html~      |
+|                          | ~/lib/matplotlib/tests/test_animation.py:259~ | ~None~                          |
+|                          | ~/lib/matplotlib/tests/test_animation.py:277~ | ~None~                          |
+| ~animation.codec~        | ~/lib/matplotlib/animation.py:177~            | ~AbstractMovieWriter.__init__~  |
+|                          | ~/lib/matplotlib/rcsetup.py:1238~             | ~None~                          |
+| ~animation.bitrate~      | ~/lib/matplotlib/animation.py:179~            | ~AbstractMovieWriter.__init__~  |
+|                          | ~/lib/matplotlib/animation.py:1274~           | ~Animation.to_html5_video~      |
+|                          | ~/lib/matplotlib/rcsetup.py:1239~             | ~None~                          |
+| ~animation.frame_format~ | ~/lib/matplotlib/animation.py:389~            | ~FileMovieWriter.__init__~      |
+|                          | ~/lib/matplotlib/rcsetup.py:1241~             | ~None~                          |
+|                          | ~/lib/matplotlib/tests/test_animation.py:177~ | ~test_save_animation_smoketest~ |
+|                          | ~/lib/matplotlib/tests/test_rcparams.py:207~  | ~test_animation_frame_formats~  |
+| ~animation.ffmpeg_path~  | ~/lib/matplotlib/animation.py:516~            | ~None~                          |
+|                          | ~/lib/matplotlib/rcsetup.py:1244~             | ~None~                          |
+|                          | ~/lib/matplotlib/tests/test_animation.py:248~ | ~test_movie_writer_registry~    |
+|                          | ~/lib/matplotlib/tests/test_animation.py:252~ | ~test_movie_writer_registry~    |
+| ~animation.ffmpeg_args~  | ~/lib/matplotlib/animation.py:517~            | ~None~                          |
+|                          | ~/lib/matplotlib/rcsetup.py:1246~             | ~None~                          |
+| ~animation.convert_path~ | ~/lib/matplotlib/animation.py:615~            | ~None~                          |
+|                          | ~/lib/matplotlib/rcsetup.py:1248~             | ~None~                          |
+| ~animation.convert_args~ | ~/lib/matplotlib/animation.py:616~            | ~None~                          |
+|                          | ~/lib/matplotlib/rcsetup.py:1250~             | ~None~                          |
+| ~animation.embed_limit~  | ~/lib/matplotlib/animation.py:722~            | ~HTMLWriter.__init__~           |
+|                          | ~/lib/matplotlib/animation.py:1261~           | ~Animation.to_html5_video~      |
+|                          | ~/lib/matplotlib/rcsetup.py:1236~             | ~None~                          |
+|                          | ~/lib/matplotlib/tests/test_animation.py:266~ | ~test_embed_limit~              |

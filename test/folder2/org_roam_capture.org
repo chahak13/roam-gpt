@@ -1,0 +1,6 @@
+:PROPERTIES:
+:ID:       c0059a8f-fa55-40a2-940e-9aa7cefd9149
+:END:
+#+title: org-roam-capture
+
+This note was created using =org-roam-capture= to test its usage
