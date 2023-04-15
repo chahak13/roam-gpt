@@ -20,13 +20,13 @@ def _read_files(folder):
     return text_files
 
 
-def _summarize_text(texts):
+def _summarize_text(texts, email):
     summaries = {}
     url = "https://api.berri.ai/create_app"
     query_api = "https://api.berri.ai/query"
     for note in tqdm(texts):
         data = {
-            "user_email": "cpmdump@gmail.com",
+            "user_email": email,
             "data_source": json.dumps([note]),
         }
         app_response = requests.post(url, data=data)
@@ -45,7 +45,7 @@ def _summarize_text(texts):
     return summaries
 
 
-def _generate_main_instance(summaries):
+def _generate_main_instance(summaries, email):
     data_dump = json.dumps(
         [
             {"chunk_metadata": name, "chunk": summary}
@@ -53,7 +53,7 @@ def _generate_main_instance(summaries):
         ]
     )
     url = "https://api.berri.ai/create_app"
-    data = {"user_email": "cpmdump@gmail.com", "data_source": data_dump}
+    data = {"user_email": email, "data_source": data_dump}
     instance_response = requests.post(url, data=data)
     if instance_response.ok:
         return instance_response.json()
@@ -78,10 +78,10 @@ def _find_related(instance, querynotes):
     return related_queries
 
 
-def generate_links(folder, output):
+def generate_links(folder, output, email):
     texts = _read_files(folder)
-    summaries = _summarize_text(texts)
-    instance = _generate_main_instance(summaries)
+    summaries = _summarize_text(texts, email)
+    instance = _generate_main_instance(summaries, email)
     related_queries = _find_related(instance, summaries.keys())
     links = {}
     for query, related_notes in related_queries.items():

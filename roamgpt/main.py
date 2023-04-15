@@ -14,8 +14,13 @@ parser.add_argument(
     dest="output",
     help="Output JSON file to store the suggestions.",
 )
+parser.add_argument(
+    "--berri-email",
+    required=True,
+    help="Email ID to be used to generate Berri.ai instances.",
+)
 args = parser.parse_args()
 
-links = generate_links(args.folder, args.output)
+links = generate_links(args.folder, args.output, args.berri_email)
 if args.output is None:
     pprint(links)

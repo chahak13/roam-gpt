@@ -26,14 +26,15 @@ via =pip install -r requirements.txt=. Then, you can use =roamgpt/main.py= to
 create suggestions.
 
 #+begin_example
-usage: main.py [-h] --folder FOLDER [-o OUTPUT]
+usage: main.py [-h] --folder FOLDER [-o OUTPUT] --berri-email BERRI_EMAIL
 
 options:
   -h, --help            show this help message and exit
   --folder FOLDER       Input folder with text files to suggest links.
   -o OUTPUT, --output OUTPUT
                         Output JSON file to store the suggestions.
-#+end_example
+  --berri-email BERRI_EMAIL
+                        Email ID to be used to generate Berri.ai instances.#+end_example
 
 * Acknowledgements
 
